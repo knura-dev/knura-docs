@@ -1,0 +1,150 @@
+/* Knura brand on Starlight. Colors come from the Knura brand guide (dark first). */
+
+:root {
+	--sl-font: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+	--sl-font-mono: 'JetBrains Mono Variable', ui-monospace, Menlo, Consolas, monospace;
+
+	--knura-accent: #f28c3a;
+	--knura-accent-text: #ffb86b;
+	--knura-accent-tint: rgba(242, 140, 58, 0.12);
+	--knura-card: #121821;
+	--knura-line: #1f2833;
+	--knura-line-strong: #2c3846;
+	--knura-term: #070a0e;
+}
+
+:root[data-theme='dark'],
+:root:not([data-theme]) {
+	--sl-color-white: #ffffff;
+	--sl-color-gray-1: #e8edf3;
+	--sl-color-gray-2: #c9d2dc;
+	--sl-color-gray-3: #8b97a6;
+	--sl-color-gray-4: #5d6876;
+	--sl-color-gray-5: #2c3846;
+	--sl-color-gray-6: #121821;
+	--sl-color-black: #0a0d12;
+
+	--sl-color-accent-low: #3a2410;
+	--sl-color-accent: #f28c3a;
+	--sl-color-accent-high: #ffb86b;
+
+	--sl-color-text: #e8edf3;
+	--sl-color-bg-nav: #0a0d12;
+	--sl-color-bg-sidebar: #0a0d12;
+	--sl-color-bg-inline-code: #121821;
+	--sl-color-hairline-light: #2c3846;
+	--sl-color-hairline: #1f2833;
+	--sl-color-hairline-shade: #070a0e;
+}
+
+:root[data-theme='light'] {
+	--knura-accent: #e06b12;
+	--knura-accent-text: #b45309;
+	--knura-accent-tint: rgba(224, 107, 18, 0.09);
+	--knura-card: #ffffff;
+	--knura-line: #e4e8ee;
+	--knura-line-strong: #d3d9e1;
+	--knura-term: #0b1017;
+
+	--sl-color-white: #0b1220;
+	--sl-color-gray-1: #182233;
+	--sl-color-gray-2: #2b3646;
+	--sl-color-gray-3: #5a6675;
+	--sl-color-gray-4: #8b97a6;
+	--sl-color-gray-5: #d3d9e1;
+	--sl-color-gray-6: #e4e8ee;
+	--sl-color-gray-7: #f6f8fa;
+	--sl-color-black: #ffffff;
+
+	--sl-color-accent-low: #fde6d3;
+	--sl-color-accent: #e06b12;
+	--sl-color-accent-high: #b45309;
+
+	--sl-color-text: #0b1220;
+	--sl-color-bg-nav: #ffffff;
+	--sl-color-bg-sidebar: #ffffff;
+	--sl-color-bg-inline-code: #f6f8fa;
+	--sl-color-hairline-light: #e4e8ee;
+	--sl-color-hairline: #e4e8ee;
+}
+
+/* Headings: heavier and tighter, like knura.io. */
+.sl-markdown-content :is(h1, h2, h3),
+h1#_top {
+	font-weight: 700;
+	letter-spacing: -0.02em;
+}
+h1#_top {
+	font-weight: 800;
+	letter-spacing: -0.025em;
+}
+
+/* Sidebar group names: small, uppercase and muted. */
+.sidebar-content .group-label .large {
+	font-size: 0.75rem;
+	font-weight: 600;
+	letter-spacing: 0.1em;
+	text-transform: uppercase;
+	color: var(--sl-color-gray-3);
+}
+.sidebar-content ul ul {
+	border-inline-start: none;
+}
+
+/* Current page in the sidebar: orange tint and orange text, not a solid block. */
+.sidebar-content a[aria-current='page'],
+.sidebar-content a[aria-current='page']:hover,
+.sidebar-content a[aria-current='page']:focus {
+	background-color: var(--knura-accent-tint);
+	color: var(--knura-accent-text);
+	font-weight: 600;
+}
+.sidebar-content a {
+	border-radius: 0.5rem;
+}
+
+/* Code blocks read like the terminal on knura.io in both themes. */
+.expressive-code {
+	--ec-brdRad: 14px;
+}
+
+/* Links in text. */
+.sl-markdown-content a:not(:where(.not-content *)) {
+	color: var(--knura-accent-text);
+	text-underline-offset: 0.2em;
+}
+
+/* Asides: Knura callout look. */
+.starlight-aside {
+	border-radius: 12px;
+	border: 1px solid var(--knura-line-strong);
+}
+.starlight-aside--caution {
+	background-color: var(--knura-accent-tint);
+	border-color: var(--knura-line-strong);
+}
+.starlight-aside--caution .starlight-aside__title {
+	color: var(--knura-accent-text);
+}
+
+/* Notes and tips: a plain card, so orange stays for warnings. */
+.starlight-aside--note,
+.starlight-aside--tip {
+	background-color: var(--knura-card);
+}
+.starlight-aside--note .starlight-aside__title,
+.starlight-aside--tip .starlight-aside__title {
+	color: var(--sl-color-white);
+}
+.starlight-aside--note .starlight-aside__icon,
+.starlight-aside--tip .starlight-aside__icon {
+	color: var(--knura-accent-text);
+}
+
+/* Cards and link cards. */
+.card,
+.sl-link-card {
+	border-radius: 16px;
+	border-color: var(--knura-line);
+	background-color: var(--knura-card);
+}

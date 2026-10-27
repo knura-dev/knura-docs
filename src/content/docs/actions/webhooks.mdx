@@ -1,0 +1,108 @@
+---
+title: Webhooks
+description: Send a signed message to any web address each time a tag is tapped.
+---
+
+import { Steps, Tabs, TabItem } from '@astrojs/starlight/components';
+
+A webhook sends a signed JSON message to a web address you choose each time a tag is tapped and checked. Point it at your own code, Node-RED, n8n, IFTTT, Zapier, Make or anything else that takes a webhook.
+
+Only taps that were checked and never seen before send anything. A copied, replayed or forged link never starts a webhook, and nothing in the tap link can choose or change which webhook runs.
+
+## Add a webhook
+
+<Tabs syncKey="where">
+	<TabItem label="At home">
+		knurgN, built into knurd, sends the webhook. You'll need a tag that already works with your knurd; see [Your first verified tap](/start-here/first-verified-tap).
+
+		<Steps>
+
+		1. **Get an address to send to.** To try it out, open [webhook.site](https://webhook.site) and copy your unique URL.
+
+		2. **Write the rules.** In your settings folder (next to `knurd.properties`), create `knurgn.properties`. Use your tag's UID from `knurctl info`:
+
+		   ```properties
+		   knot.04AABBCCDDEEFF.name=front-door
+		   knot.04AABBCCDDEEFF.actions=test-hook
+		   webhook.test-hook.url=https://webhook.site/your-unique-id
+		   secrets.file=knurgn-secrets.properties
+		   ```
+
+		   `name` is what the tag is called in the message. `actions` lists one or more connector ids, separated by commas.
+
+		3. **Make the signing secret.** Only you may read this file, or knurd refuses to start:
+
+		   ```sh
+		   (umask 077; printf 'test-hook=whsec_%s\n' "$(openssl rand -base64 32)" > knurgn-secrets.properties)
+		   echo 'actions.file=knurgn.properties' >> knurd.properties
+		   ```
+
+		4. **Restart knurd.** It should print `knurgN: 1 knot(s) with actions`.
+
+		5. **Tap the tag.** webhook.site shows the message. A replayed link sends nothing.
+
+		</Steps>
+
+		Addresses must use HTTPS, except `localhost` and private network addresses like `192.168.x.x`. Webhook addresses and secrets never appear in knurd's logs.
+	</TabItem>
+	<TabItem label="Hosted account">
+		Your hosted account sends the webhook itself, so nothing needs to run at home.
+
+		<Steps>
+
+		1. **Get an address to send to.** Copy the https address the service gives you, such as an IFTTT or Zapier webhook URL.
+
+		2. **Add it.** On the dashboard, open **Connections**. Under **Add a webhook**, give it a short name (like `ifttt`), paste the address and click **Add webhook**.
+
+		3. **Save the signing secret if you need it.** It's shown only once. Services that check Standard Webhooks signatures need it; most others can ignore it.
+
+		4. **Choose it for a tag.** Open the tag's page, tick the webhook under **When it's tapped**, **From the cloud**, and click **Save**.
+
+		5. **Tap the tag.** The service receives the message.
+
+		</Steps>
+
+		The address is stored encrypted and never shown again, because addresses like these often hold a key. Only `https` addresses on the public internet are accepted. The Free plan includes one cloud webhook and the Home plan five.
+
+		To send webhooks to something on your home network instead, use the home link with the **At home** steps.
+	</TabItem>
+</Tabs>
+
+## What the message looks like
+
+Each tap sends one `POST` with a JSON body:
+
+```json
+{
+  "type": "tap.verified",
+  "timestamp": "2026-10-06T21:14:03.120Z",
+  "data": {
+    "id": "042D6B02936980:61",
+    "knot": "desk-candle",
+    "uid": "042D6B02936980",
+    "counter": 61,
+    "tappedAt": "2026-10-06T21:14:03.120Z",
+    "action": "desk-webhook"
+  }
+}
+```
+
+| Field | What it is |
+| --- | --- |
+| `data.id` | The tap's id: the tag's UID and its tap counter. The same on every retry of this tap. |
+| `data.knot` | The tag's name from your rules. |
+| `data.name` | The tag's name on the hosted dashboard, when it has one. Only on taps a hosted account checked. |
+| `data.uid` | The tag's UID. |
+| `data.counter` | How many times the tag has been tapped. It only goes up. |
+| `data.tappedAt` | When the tap was checked. |
+| `data.action` | Which webhook this is. |
+
+## Delivery and retries
+
+- Messages are sent in the background, so the tap page never waits for them.
+- Network errors and answers 408, 429 and 5xx are retried after 1, 2, 4… seconds. Other answers are final.
+- A message that hasn't gone through 30 seconds after the tap is dropped rather than sent late.
+- Redirects are not followed.
+- At home, messages waiting to be sent are lost if knurd restarts.
+
+Because a retry can arrive twice, your receiver should ignore an `id` it has already handled. [Check a webhook signature](/actions/check-a-webhook-signature) shows how, along with checking that the message really came from your server.

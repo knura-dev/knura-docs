@@ -1,0 +1,46 @@
+---
+title: What is Knura
+description: Knura makes NFC tags whose taps can be proven genuine, and lets each tap run an action.
+---
+
+import { CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+Knura turns an NFC tag into a button you can trust. When a phone taps the tag, your server checks that the tap came from that exact tag, right now, and wasn't copied or replayed. Only then does it run the action you chose, like starting a Home Assistant automation or sending a webhook.
+
+## How it fits together
+
+- **Tags** are NTAG 424 DNA stickers, cards or fobs. Each one gets its own keys and writes a fresh, signed link every time it's tapped.
+- **knurd** is the server that checks each tap. A copied link, an old link or a forged one is refused.
+- **knurgN** runs inside knurd and decides what a verified tap does: a webhook, Home Assistant or a Matter sensor.
+- **knurctl** and the **Knura app** set tags up, with a USB reader or an Android phone.
+
+You can run all of it yourself at home, or use a hosted account so there's no server to keep running.
+
+:::caution[Alpha]
+Knura is early software. Don't use it to protect anything that matters yet.
+:::
+
+## Where to start
+
+<CardGrid>
+	<LinkCard
+		title="At home or a hosted account"
+		description="Which way to run Knura, and what each one needs."
+		href="/start-here/at-home-or-hosted"
+	/>
+	<LinkCard
+		title="Your first verified tap"
+		description="From the release downloads to a phone tap your server accepts."
+		href="/start-here/first-verified-tap"
+	/>
+	<LinkCard
+		title="Claim a ready-to-use tag"
+		description="Got a tag with a claim card? Make it yours in a minute."
+		href="/tags/claim-a-tag"
+	/>
+	<LinkCard
+		title="Webhooks"
+		description="Send a signed message to any web address when a tag is tapped."
+		href="/actions/webhooks"
+	/>
+</CardGrid>

@@ -1,0 +1,84 @@
+---
+title: Check a webhook signature
+description: Make sure a webhook really came from your Knura server, and handle each tap once.
+---
+
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+
+Anyone who learns your webhook address can send it messages. The signature lets your receiver tell a real message from a fake one. Knura signs webhooks the [Standard Webhooks](https://www.standardwebhooks.com) way, so many libraries and services can check them for you.
+
+## The three headers
+
+| Header | What it holds |
+| --- | --- |
+| `webhook-id` | The tap's id (`UID:counter`). The same on every retry. |
+| `webhook-timestamp` | When the message was sent, in seconds since 1970. |
+| `webhook-signature` | `v1,` and a base64 HMAC-SHA256 of `id.timestamp.body`, made with your secret. |
+
+## What your receiver should do
+
+1. **Check the signature.** Take the part of your secret after `whsec_`, base64-decode it, and use it as the HMAC-SHA256 key over `webhook-id`, a dot, `webhook-timestamp`, a dot and the raw body. Compare the base64 result with each `v1,` value in `webhook-signature`, using a constant-time compare.
+2. **Refuse old messages.** Reject a timestamp more than 5 minutes from now.
+3. **Handle each tap once.** Remember the `webhook-id` values you've handled and ignore repeats.
+
+Use the raw body exactly as it arrived. Parsing the JSON and writing it back out changes the bytes and breaks the check.
+
+## Examples
+
+<Tabs syncKey="lang">
+	<TabItem label="Node.js">
+		```js
+		import crypto from 'node:crypto';
+
+		const key = Buffer.from(process.env.KNURA_WEBHOOK_SECRET.replace(/^whsec_/, ''), 'base64');
+		const seen = new Set();
+
+		// headers: the request headers; body: the raw body as a string
+		export function checkKnuraWebhook(headers, body) {
+			const id = headers['webhook-id'];
+			const ts = headers['webhook-timestamp'];
+			const expected = crypto.createHmac('sha256', key).update(`${id}.${ts}.${body}`).digest();
+
+			const ok = (headers['webhook-signature'] || '').split(' ').some((part) => {
+				const [version, sig] = part.split(',');
+				const given = Buffer.from(sig || '', 'base64');
+				return version === 'v1' && given.length === expected.length && crypto.timingSafeEqual(given, expected);
+			});
+			if (!ok) return 'bad signature';
+			if (Math.abs(Date.now() / 1000 - Number(ts)) > 300) return 'too old';
+			if (seen.has(id)) return 'already handled';
+			seen.add(id);
+			return 'ok';
+		}
+		```
+	</TabItem>
+	<TabItem label="Python">
+		```python
+		import base64, hashlib, hmac, os, time
+
+		KEY = base64.b64decode(os.environ["KNURA_WEBHOOK_SECRET"].removeprefix("whsec_"))
+		seen = set()
+
+		def check_knura_webhook(headers, body: bytes) -> str:
+		    msg_id = headers["webhook-id"]
+		    ts = headers["webhook-timestamp"]
+		    signed = f"{msg_id}.{ts}.".encode() + body
+		    expected = base64.b64encode(hmac.new(KEY, signed, hashlib.sha256).digest()).decode()
+
+		    sigs = [p.split(",", 1)[1] for p in headers.get("webhook-signature", "").split() if p.startswith("v1,")]
+		    if not any(hmac.compare_digest(s, expected) for s in sigs):
+		        return "bad signature"
+		    if abs(time.time() - int(ts)) > 300:
+		        return "too old"
+		    if msg_id in seen:
+		        return "already handled"
+		    seen.add(msg_id)
+		    return "ok"
+		```
+	</TabItem>
+	<TabItem label="Java">
+		[`WebhookReceiver.java`](https://github.com/knura-dev/knura/blob/main/examples/webhook-receiver/WebhookReceiver.java) is a complete receiver in one file, with no libraries. It does all three checks.
+	</TabItem>
+</Tabs>
+
+These examples keep handled ids in memory, which is fine for trying things out. A real receiver should keep them somewhere that survives a restart, for at least a few minutes.
