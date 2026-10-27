@@ -148,3 +148,15 @@ h1#_top {
 	border-color: var(--knura-line);
 	background-color: var(--knura-card);
 }
+
+/* Wide screens: keep the "On this page" column at a fixed width and center the page's text in the
+   space between the two sidebars, so the gaps on either side of it are even. */
+@media (min-width: 72rem) {
+	.right-sidebar-container {
+		width: var(--sl-sidebar-width);
+	}
+	[data-has-sidebar][data-has-toc] .main-pane {
+		--sl-content-margin-inline: auto;
+		width: calc(100% - var(--sl-sidebar-width));
+	}
+}
