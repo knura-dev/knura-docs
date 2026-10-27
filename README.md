@@ -30,3 +30,9 @@ sentences, no emoji or hype. Keep each page to one task where you can.
 
 See [deploy/README.md](deploy/README.md).
 
+
+## License
+
+The documentation, including its code samples, is licensed under
+[Creative Commons Attribution 4.0 International (CC BY 4.0)](LICENSE). You may share and adapt it
+for any purpose, as long as you credit Knura and link to the license.
