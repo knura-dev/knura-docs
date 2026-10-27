@@ -4,6 +4,7 @@ description: A ready-to-use tag arrives locked, with a claim card. Claiming swap
 ---
 
 import { Steps, Tabs, TabItem } from '@astrojs/starlight/components';
+import ClaimWalkthrough from '../../../components/ClaimWalkthrough.astro';
 
 A ready-to-use tag arrives locked, with a claim card. Claiming it swaps the card's keys for your own, so only your server can check its taps from then on, and the card stops being useful to anyone.
 
@@ -14,6 +15,8 @@ If the seal over the claim code was already broken when the card arrived, don't 
 :::note[Version]
 Claiming needs knurctl, knurd and the Knura app newer than 0.3.0-alpha.
 :::
+
+<ClaimWalkthrough />
 
 ## The claim card
 
