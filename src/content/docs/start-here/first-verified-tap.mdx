@@ -1,0 +1,168 @@
+---
+title: Your first verified tap
+description: From the release downloads to a phone tap your own server accepts, in about half an hour.
+---
+
+import { Steps, Tabs, TabItem } from '@astrojs/starlight/components';
+
+This guide takes you from the files on the [Releases page](https://github.com/knura-dev/knura/releases) to a tag that a phone can tap and that your own server checks. You don't need to build anything.
+
+:::tip[Using a hosted account?]
+Skip this page. Pair the Knura app with your account and set tags up from the phone; there's no server to install.
+:::
+
+## What you need
+
+- **NTAG 424 DNA tags.** Stickers, cards or key fobs with this exact chip. Plain NTAG 213, 215 or 216 tags won't work.
+- **A way to set tags up**: a USB NFC reader that speaks PC/SC (such as the ACS ACR122U), or an Android phone with NFC and the [Knura app](https://github.com/knura-dev/knura/blob/main/docs/android-app.md). This guide uses the reader.
+- **A computer to run knurd** (Linux, macOS or Windows) that stays on while you want taps to work.
+- **Java 21 or newer** on that computer.
+
+## 1. Install Java and the reader driver
+
+<Tabs syncKey="os">
+	<TabItem label="Fedora">
+		```sh
+		sudo dnf install java-21-openjdk pcsc-lite pcsc-lite-ccid
+		sudo systemctl enable --now pcscd.socket
+		```
+	</TabItem>
+	<TabItem label="Debian / Ubuntu">
+		Also for Raspberry Pi OS.
+		```sh
+		sudo apt install openjdk-21-jre pcscd libccid
+		sudo systemctl enable --now pcscd.socket
+		```
+	</TabItem>
+	<TabItem label="macOS">
+		Install Java 21, for example with `brew install openjdk@21` or the installer from [adoptium.net](https://adoptium.net). The reader driver is built in.
+	</TabItem>
+	<TabItem label="Windows">
+		Install Java 21 from [adoptium.net](https://adoptium.net) and tick **Set JAVA_HOME**. The reader driver is built in. Windows hasn't been tested much yet, so please report problems.
+	</TabItem>
+</Tabs>
+
+Check it with `java -version`. It should say 21 or higher.
+
+## 2. Download and unzip
+
+From the [latest release](https://github.com/knura-dev/knura/releases), download these two files under **Assets**:
+
+| File | What it is |
+| --- | --- |
+| `knurctl-<version>.zip` | The tag setup tool, for the computer with the USB reader. |
+| `knurd-<version>.zip` | The server that checks taps and runs actions. |
+
+Unzip both and make one folder for your settings. knurctl and knurd both read `knurd.properties` from the folder you run them in, so always run them from there.
+
+```sh
+mkdir -p ~/knura && cd ~/knura
+unzip ~/Downloads/knurctl-*.zip
+unzip ~/Downloads/knurd-*.zip
+mkdir -p home && cd home          # your settings live here
+
+# shortcuts for this terminal (add them to ~/.bashrc to keep them)
+alias knurctl="$HOME/knura/knurctl-0.3.0-alpha/bin/knurctl"
+alias knurd="$HOME/knura/knurd-0.3.0-alpha/bin/knurd"
+```
+
+On Windows, unzip with Explorer and run `bin\knurctl.bat` and `bin\knurd.bat` from a Command Prompt opened in your settings folder.
+
+## 3. Make your master key
+
+```sh
+knurctl init
+```
+
+This writes `knurd.properties` with a new random **master key**. Every tag you set up gets its own keys worked out from it.
+
+:::caution[Back it up]
+Keep a copy of `knurd.properties` somewhere safe and private, such as a password manager or an encrypted USB stick. Without it you can't verify or reset your tags. Never share it or put it in Git.
+:::
+
+## 4. Set up a tag
+
+Plug in the reader, then:
+
+```sh
+knurctl readers        # should list your reader
+knurctl provision      # put a new tag on the reader when asked
+knurctl tap            # reads the tag like a phone does and checks the link
+```
+
+`provision` gives the tag its own keys, writes a tap link onto it and reads it back. Leave the tag on the reader until it says it's done. `knurctl info` shows the tag's UID (its ID) at any time.
+
+:::note[Got a tag with a claim card?]
+Use [Claim a ready-to-use tag](/tags/claim-a-tag) instead of `knurctl provision`.
+:::
+
+## 5. Start knurd and check a tap
+
+```sh
+knurd
+```
+
+It prints `knurd listening on http://127.0.0.1:8424`. Leave it running, open a second terminal in the same folder and check a tap:
+
+```sh
+knurctl tap                          # prints the link the tag just wrote
+curl '<the link knurctl printed>'    # {"status":"ok","uid":"...","counter":...}
+curl '<the same link again>'         # {"status":"replay",...}
+```
+
+That second answer is the point of Knura: a link only works once, so a copied or reused link is refused.
+
+## 6. Let phones reach knurd
+
+A phone opens the link on the tag, so knurd needs an HTTPS address the phone can reach. That address is written onto the tag, so it must never change. The simplest free way is [Tailscale Funnel](https://tailscale.com/kb/1223/funnel).
+
+<Steps>
+
+1. Install Tailscale on knurd's computer and sign in. Turn on HTTPS and Funnel for your tailnet when it asks.
+
+2. Start the funnel to knurd's port:
+
+   ```sh
+   sudo tailscale funnel --bg 8424
+   ```
+
+   It prints your address, ending in `.ts.net`. `tailscale funnel status` shows it again later.
+
+3. Open `knurd.properties` and set `public.url` to **your** address:
+
+   ```properties
+   public.url=https://<your-computer>.<your-tailnet>.ts.net
+   ```
+
+4. Restart knurd (Ctrl+C, then `knurd`).
+
+5. Rewrite the tag's link to use the new address:
+
+   ```sh
+   knurctl provision --from knura
+   ```
+
+</Steps>
+
+Now tap the tag with your phone. You should see a **Tap verified** page. Refresh it and you'll see **Link already used**.
+
+A new Funnel address can take up to 15 minutes to work from phones. If the phone shows a blank page, wait and try again.
+
+### Optional: tags that survive a move
+
+If you might move knurd to another computer later, register with the free tap.knura.io forwarder. Your tags then carry a tap.knura.io link, and moving means registering the new address instead of rewriting every tag.
+
+```sh
+knurctl resolver register     # creates your owner ID and key
+# restart knurd, then:
+knurctl resolver register     # points tap.knura.io at your public.url
+knurctl provision --from knura
+knurctl resolver check        # shows where your taps go
+```
+
+Back up `knurd.properties` again afterwards: it now holds your resolver key too.
+
+## Next
+
+- [Add a webhook](/actions/webhooks) so a tap does something.
+- To keep knurd running after a restart, and for troubleshooting, see the [full setup guide](https://github.com/knura-dev/knura/blob/main/docs/setup-from-release.md).

@@ -1,0 +1,80 @@
+---
+title: Claim a ready-to-use tag
+description: A ready-to-use tag arrives locked, with a claim card. Claiming swaps the card's keys for your own.
+---
+
+import { Steps, Tabs, TabItem } from '@astrojs/starlight/components';
+
+A ready-to-use tag arrives locked, with a claim card. Claiming it swaps the card's keys for your own, so only your server can check its taps from then on, and the card stops being useful to anyone.
+
+:::caution[Check the seal first]
+If the seal over the claim code was already broken when the card arrived, don't claim that tag. Someone may have read the code first. Contact the seller for a new one.
+:::
+
+:::note[Version]
+Claiming needs knurctl, knurd and the Knura app newer than 0.3.0-alpha.
+:::
+
+## The claim card
+
+The card shows the tag's UID, its claim code and a QR code holding both. Keep it until every tag it opens is claimed.
+
+| On the card | Example |
+| --- | --- |
+| Tag UID | `04DE5F1EACC040` |
+| Claim code | 28 letters and digits in groups of four, like `0004-1061-050R-3GG2-8A1C-60T3-GFQS` |
+| QR code | `knura://claim?uid=<UID>&code=<code>` |
+
+## Claim it
+
+<Tabs syncKey="setup-tool">
+	<TabItem label="Phone app">
+		<Steps>
+
+		1. **Open Claim a tag.** In the Knura app, tap **Claim a tag**, then **Start**.
+
+		2. **Scan the card.** Scan the QR code, or tap **Type code** and type the claim code.
+
+		3. **Hold the tag to the phone.** Unlock, then hold the tag to the back of the phone until it says it's done.
+
+		4. **It's yours.** The app says the tag is claimed. With a pack card, tap **Claim next tag** for the next one.
+
+		</Steps>
+
+		The app checks the code for typos and, with the QR code, that you're holding the card's own tag. The code goes only to your server, which forgets it when the claim is done.
+	</TabItem>
+	<TabItem label="knurctl">
+		Put the tag on the reader and run, with the code from your card:
+
+		```sh
+		knurctl provision --from claim:0004-1061-050R-3GG2-8A1C-60T3-GFQS
+		```
+
+		Case, spaces and dashes don't matter, and O, I and L are read as 0, 1 and 1. A typo is caught before knurctl touches the tag.
+
+		To also check that the tag on the reader is the one the card was made for, give the whole link from the QR code, in quotes because of its `&`:
+
+		```sh
+		knurctl provision --from 'claim:knura://claim?uid=04DE5F1EACC040&code=...'
+		```
+	</TabItem>
+</Tabs>
+
+## Pack cards
+
+A pack can come with one card for all of its tags instead of one card each. The pack card says how many tags it claims instead of showing a UID. Claim each tag the same way; the app offers **Claim next tag** so you don't scan the card again. With knurctl, run the same command once per tag.
+
+Each tag still gets keys of its own, so claiming one doesn't touch the others. Claim them all before you throw the card away: an unclaimed tag can't be claimed without it.
+
+## If something goes wrong
+
+| What you see | What it means |
+| --- | --- |
+| The code doesn't open a tag you've never claimed | Someone else may have claimed it already. Stop, keep the card and the tag, and contact the seller with the tag's UID. |
+| The code doesn't open the next tag of a pack | That tag is already claimed. Move on to the next one. |
+
+To put an unclaimed tag back to factory keys instead, run `knurctl reset --from claim:CODE`.
+
+## How it works
+
+The claim code holds a random secret. All of the tag's keys come from that secret and the tag's UID, so a card only opens its own tag. The open format is described in [claim-tags.md](https://github.com/knura-dev/knura/blob/main/docs/claim-tags.md).
