@@ -32,7 +32,7 @@ export default defineConfig({
 					items: ['index', 'start-here/at-home-or-hosted', 'start-here/first-verified-tap'],
 				},
 				{ label: 'Tags', items: ['tags/claim-a-tag', 'tags/set-up-with-phone'] },
-				{ label: 'Actions', items: ['actions/webhooks', 'actions/home-assistant', 'actions/check-a-webhook-signature'] },
+				{ label: 'Actions', items: ['actions/webhooks', 'actions/home-assistant', 'actions/matter', 'actions/check-a-webhook-signature'] },
 				{ label: 'Run it at home', items: ['home/keys-backup'] },
 			],
 		}),
