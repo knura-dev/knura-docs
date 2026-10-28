@@ -1,7 +1,8 @@
 ---
 // Animated walkthrough of claiming a tag in the Knura app, in the style of the phone walkthrough on
-// knura.io/phone-app.html. Plain HTML, CSS and a small script: no video or GIF to download, it
-// follows the site's light or dark theme, and it holds still for people who turn motion off.
+// knura.io/phone-app.html.
+import Walkthrough from './Walkthrough.astro';
+
 const steps = [
 	{ title: 'Open Claim a tag', text: 'On the app\'s home screen, tap Claim a tag.', dur: 4200 },
 	{ title: 'Scan the card', text: 'Tap Scan card and point the camera at the QR code. Or tap Type code and type the code under the seal.', dur: 4000 },
@@ -13,10 +14,10 @@ const mark = `<svg width="20" height="20" viewBox="0 0 32 32"><rect x="2" y="2" 
 const tick = `<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>`;
 ---
 
-<figure class="kw not-content" data-kw>
-	<div class="kw-phone" aria-hidden="true">
+<Walkthrough steps={steps}>
+	<div class="kw-phone">
 		<div class="kw-screen">
-			<div class="kw-scr kw-home on">
+			<div class="kw-scr kw-home on" data-on="0">
 				<div class="kw-top"><Fragment set:html={mark} /><b>Knura</b><span class="kw-pill">Paired</span></div>
 				<p class="kw-section">What do you want to do with a tag?</p>
 				<div class="kw-tiles">
@@ -28,7 +29,7 @@ const tick = `<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>`
 				</div>
 			</div>
 
-			<div class="kw-scr kw-start">
+			<div class="kw-scr kw-start" data-on="1">
 				<span class="kw-kick">Claim a tag</span>
 				<div class="kw-card kw-mini">
 					<div class="kw-qr" data-qr></div>
@@ -40,7 +41,7 @@ const tick = `<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>`
 				<span class="kw-btn kw-ghost">Type code</span>
 			</div>
 
-			<div class="kw-scr kw-scan">
+			<div class="kw-scr kw-scan" data-on="2">
 				<p class="kw-cam">Point the camera at the card</p>
 				<div class="kw-view">
 					<div class="kw-paper">
@@ -52,7 +53,7 @@ const tick = `<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>`
 				<div class="kw-toast"><Fragment set:html={tick} /><div><b>Code checked</b>For tag 04DE5F1EACC040</div></div>
 			</div>
 
-			<div class="kw-scr kw-hold">
+			<div class="kw-scr kw-hold" data-on="3">
 				<span class="kw-kick">Claim a tag</span>
 				<div class="kw-target"><span></span><span></span><span></span></div>
 				<p class="kw-h">Hold a tag to the back</p>
@@ -66,7 +67,7 @@ const tick = `<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>`
 				<div class="kw-chip">NTAG 424 DNA</div>
 			</div>
 
-			<div class="kw-scr kw-done">
+			<div class="kw-scr kw-done" data-on="4">
 				<span class="kw-kick">Claim a tag</span>
 				<div class="kw-big"><Fragment set:html={tick} /></div>
 				<p class="kw-h">Tag claimed</p>
@@ -82,49 +83,12 @@ const tick = `<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>`
 		</div>
 	</div>
 
-	<figcaption class="kw-side">
-		<ol class="kw-steps">
-			{steps.map((s, i) => (
-				<li class={i === 0 ? 'active' : ''} data-dur={s.dur}>
-					<button type="button" data-go={i}>
-						<span class="kw-n">{i + 1}</span>
-						<b>{s.title}</b>
-						<small>{s.text}</small>
-						<span class="kw-bar"></span>
-					</button>
-				</li>
-			))}
-		</ol>
-		<div class="kw-controls">
-			<button type="button" data-toggle>Pause</button>
-			<span>Example values. Click a step to jump to it.</span>
-		</div>
-	</figcaption>
-</figure>
+</Walkthrough>
 
 <style is:global>
-	.kw {
-		--kw-bg: #0a0d12; --kw-card: #121821; --kw-line: #1f2833; --kw-line-strong: #2c3846;
-		--kw-fg: #e8edf3; --kw-muted: #8b97a6; --kw-accent: #f28c3a; --kw-accent-fg: #160b02;
-		--kw-tint: rgba(242, 140, 58, 0.12); --kw-ok: #4ade9b; --kw-ok-tint: rgba(74, 222, 155, 0.12);
-		--kw-page-card: var(--knura-card, #121821);
-		display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 2rem; align-items: center;
-		margin: 1.5rem 0 0; padding: 1.5rem; border: 1px solid var(--sl-color-hairline-light);
-		border-radius: 16px; background: var(--sl-color-bg-nav);
-	}
-	:root[data-theme='light'] .kw {
-		--kw-bg: #f6f8fa; --kw-card: #ffffff; --kw-line: #e4e8ee; --kw-line-strong: #d3d9e1;
-		--kw-fg: #0b1220; --kw-muted: #5a6675; --kw-accent: #b45309; --kw-accent-fg: #ffffff;
-		--kw-tint: rgba(180, 83, 9, 0.1); --kw-ok: #0f7a4c; --kw-ok-tint: rgba(21, 150, 95, 0.1);
-		background: var(--sl-color-gray-7, #f6f8fa);
-	}
-	@media (max-width: 40rem) { .kw { grid-template-columns: minmax(0, 1fr); justify-items: center; padding: 1rem; } }
-
 	/* The phone */
 	.kw-phone { width: 236px; height: 480px; padding: 9px; border-radius: 38px; background: #05070a; box-shadow: 0 0 0 1px #2c3846, 0 30px 70px -40px rgba(0, 0, 0, 0.8); position: relative; }
 	.kw-screen { position: relative; width: 100%; height: 100%; border-radius: 30px; overflow: hidden; background: var(--kw-bg); color: var(--kw-fg); font: 11px/1.4 var(--sl-font); }
-	.kw-scr { position: absolute; inset: 0; padding: 30px 13px 14px; display: flex; flex-direction: column; gap: 9px; opacity: 0; transform: translateX(12px); transition: opacity 0.35s, transform 0.35s; }
-	.kw-scr.on { opacity: 1; transform: none; }
 	.kw-top { display: flex; align-items: center; gap: 7px; font-size: 13px; }
 	.kw-pill { margin-left: auto; padding: 2px 8px; border-radius: 99px; background: var(--kw-ok-tint); color: var(--kw-ok); font-size: 9.5px; font-weight: 600; }
 	.kw-section { margin: 4px 0 0; color: var(--kw-muted); font-size: 10px; }
@@ -135,14 +99,6 @@ const tick = `<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>`
 	.kw-claim { grid-column: span 2; }
 	.kw-home.on .kw-claim { animation: kw-select 4.2s both; }
 	@keyframes kw-select { 0%, 55% { border-color: var(--kw-line); background: var(--kw-card); } 65%, 100% { border-color: var(--kw-accent); background: var(--kw-tint); } }
-	.kw-card { margin: 0; padding: 10px; border-radius: 12px; background: var(--kw-card); border: 1px solid var(--kw-line); }
-	.kw-kick { color: var(--kw-accent); font-size: 9.5px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
-	.kw-h { margin: 0; font-size: 14px; font-weight: 700; text-align: center; }
-	.kw-muted { margin: 0; color: var(--kw-muted); font-size: 10px; text-align: center; }
-	.kw-mono { font-family: var(--sl-font-mono); }
-	.kw-grow { flex: 1; }
-	.kw-btn { position: relative; display: grid; place-items: center; min-height: 36px; border-radius: 11px; background: var(--kw-accent); color: var(--kw-accent-fg); font-weight: 700; font-size: 11px; }
-	.kw-ghost { background: transparent; border: 1px solid var(--kw-line-strong); color: var(--kw-fg); font-weight: 600; }
 	.kw-two { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
 	.kw-two .kw-btn { font-size: 10px; }
 
@@ -216,100 +172,11 @@ const tick = `<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>`
 	.kw-dl dt { color: var(--kw-muted); }
 	.kw-dl dd { margin: 0; text-align: right; }
 
-	/* Steps beside the phone */
-	.kw-side { min-width: 0; width: 100%; }
-	.kw-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
-	.kw-steps li { margin: 0; }
-	.kw-steps button { position: relative; overflow: hidden; width: 100%; display: grid; grid-template-columns: auto 1fr; column-gap: 0.75rem; align-items: center; padding: 0.6rem 0.75rem; border: 1px solid transparent; border-radius: 12px; background: none; color: var(--sl-color-gray-3); font: inherit; text-align: left; cursor: pointer; }
-	.kw-steps button:hover { background: var(--knura-card); }
-	.kw-steps button:focus-visible { outline: 2px solid var(--sl-color-accent); outline-offset: 2px; }
-	.kw-n { grid-row: span 2; width: 1.6rem; height: 1.6rem; border-radius: 50%; display: grid; place-items: center; border: 1px solid var(--sl-color-hairline-light); font-size: 0.8rem; font-weight: 600; }
-	.kw-steps b { color: var(--sl-color-white); font-weight: 600; font-size: 0.95rem; }
-	.kw-steps small { grid-column: 2; display: none; font-size: 0.875rem; line-height: 1.5; }
-	.kw-steps li.active button { background: var(--knura-card); border-color: var(--sl-color-hairline-light); }
-	.kw-steps li.active small { display: block; }
-	.kw-steps li.active .kw-n { background: var(--sl-color-accent); border-color: var(--sl-color-accent); color: var(--sl-color-black); }
-	.kw-steps li.done .kw-n { color: var(--sl-color-accent); border-color: var(--sl-color-accent); }
-	.kw-bar { position: absolute; left: 0; bottom: 0; height: 2px; width: 100%; background: var(--sl-color-accent); transform-origin: left; transform: scaleX(0); }
-	.kw:not(.paused) .kw-steps li.active .kw-bar { animation: kw-progress var(--dur, 4s) linear both; }
-	@keyframes kw-progress { to { transform: scaleX(1); } }
-	.kw-controls { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; margin-top: 0.9rem; color: var(--sl-color-gray-3); font-size: 0.85rem; }
-	.kw-controls button { padding: 0.35rem 0.9rem; border-radius: 8px; border: 1px solid var(--sl-color-hairline-light); background: none; color: var(--sl-color-white); font: inherit; font-weight: 600; cursor: pointer; }
-
-	/* Motion off: every screen still makes sense, nothing moves on its own. */
-	.kw.paused .kw-scr.on *, .kw.paused .kw-scr.on { animation-play-state: paused; }
+	/* Motion off: the end state of each screen. */
 	@media (prefers-reduced-motion: reduce) {
-		.kw *, .kw-scr { animation: none !important; transition: none !important; }
 		.kw-toast, .kw-s2 svg, .kw-s3 svg { opacity: 1; transform: none; }
 		.kw-s2, .kw-s3 { color: var(--kw-fg); }
 		.kw-home .kw-claim { border-color: var(--kw-accent); background: var(--kw-tint); }
 		.kw-chip { display: none; }
 	}
 </style>
-
-<script>
-	for (const walk of document.querySelectorAll<HTMLElement>('[data-kw]')) {
-		const screens = walk.querySelectorAll<HTMLElement>('.kw-scr');
-		const steps = walk.querySelectorAll<HTMLElement>('.kw-steps li');
-		const toggle = walk.querySelector<HTMLButtonElement>('[data-toggle]')!;
-		const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-		let current = 0;
-		let timer: ReturnType<typeof setTimeout> | undefined;
-		let playing = !still;
-
-		// A QR-looking pattern (decorative, not a real code).
-		let seed = 11;
-		const rnd = () => ((seed = (seed * 9301 + 49297) % 233280), seed / 233280);
-		const finder = (x: number, y: number) =>
-			`<rect x="${x}" y="${y}" width="7" height="7"/><rect x="${x + 1}" y="${y + 1}" width="5" height="5" fill="#fff"/><rect x="${x + 2}" y="${y + 2}" width="3" height="3"/>`;
-		let cells = '';
-		for (let y = 0; y < 25; y++)
-			for (let x = 0; x < 25; x++) {
-				const inFinder = (x < 8 && y < 8) || (x > 16 && y < 8) || (x < 8 && y > 16);
-				if (!inFinder && rnd() < 0.5) cells += `<rect x="${x}" y="${y}" width="1" height="1"/>`;
-			}
-		const qr = `<svg viewBox="0 0 25 25" shape-rendering="crispEdges" fill="#0a0d12">${cells}${finder(0, 0)}${finder(18, 0)}${finder(0, 18)}</svg>`;
-		walk.querySelectorAll('[data-qr]').forEach((el) => (el.innerHTML = qr));
-
-		const restart = (el: Element) => {
-			el.classList.remove('on');
-			void (el as HTMLElement).offsetWidth;
-		};
-		const show = (i: number) => {
-			current = (i + screens.length) % screens.length;
-			screens.forEach((s, k) => {
-				if (k === current) restart(s);
-				s.classList.toggle('on', k === current);
-			});
-			steps.forEach((s, k) => {
-				s.classList.toggle('active', k === current);
-				s.classList.toggle('done', k < current);
-			});
-			const dur = Number(steps[current].dataset.dur) || 4500;
-			steps[current].style.setProperty('--dur', `${dur}ms`);
-			const bar = steps[current].querySelector<HTMLElement>('.kw-bar')!;
-			bar.style.animation = 'none';
-			void bar.offsetWidth;
-			bar.style.animation = '';
-			clearTimeout(timer);
-			if (playing) timer = setTimeout(() => show(current + 1), dur);
-		};
-		const setPlaying = (p: boolean) => {
-			playing = p;
-			walk.classList.toggle('paused', !p);
-			toggle.textContent = p ? 'Pause' : 'Play';
-			clearTimeout(timer);
-			if (p) show(current);
-		};
-
-		walk.querySelectorAll<HTMLButtonElement>('[data-go]').forEach((b) =>
-			b.addEventListener('click', () => show(Number(b.dataset.go)))
-		);
-		toggle.addEventListener('click', () => setPlaying(!playing));
-		if (still) {
-			toggle.hidden = true;
-			walk.classList.add('paused');
-		}
-		show(0);
-	}
-</script>

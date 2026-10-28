@@ -1,0 +1,125 @@
+---
+// Animated walkthrough of a webhook: a checked tap becomes one signed message, it's retried while
+// the receiver is busy, and the receiver skips a repeat it has already handled.
+import Walkthrough from './Walkthrough.astro';
+
+const steps = [
+	{ title: 'A tap is checked', text: 'Only a tap that\'s genuine and new gets this far. Copied, replayed or forged links never send anything.', dur: 4000 },
+	{ title: 'The message is made', text: 'One JSON message for each webhook the tag has, signed with that webhook\'s secret so your service can tell it\'s real.', dur: 4600 },
+	{ title: 'Busy? It tries again', text: 'Network errors and 408, 429 or 5xx answers are retried after 1, 2, 4… seconds, for up to 30 seconds after the tap.', dur: 5200 },
+	{ title: 'Your service gets it', text: 'Check the signature, then act on it. A 2xx answer means delivered; any other answer is final.', dur: 4600 },
+	{ title: 'Skip repeats', text: 'A retry can arrive twice. The id is the same on every try, so skip an id you\'ve already handled.', dur: 4800 },
+];
+const tick = `<svg class="kw-tick" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>`;
+---
+
+<Walkthrough steps={steps}>
+	<div class="kh">
+		<div class="kh-node">
+			<div class="kh-head"><span class="kw-kick">Your Knura server</span><span class="kh-where">knurd or hosted</span></div>
+			<p class="kh-tap"><Fragment set:html={tick} /><span>Tap verified<br /><span class="kw-mono">04DE…C040 · tap 61</span></span></p>
+			<p class="kh-note kw-fade on" data-on="0">Replays and fakes stop here.</p>
+		</div>
+
+		<div class="kh-wire"><i class="kh-dot" data-on="1"></i></div>
+
+		<div class="kh-node kh-msg">
+			<div class="kh-head"><span class="kw-kick">Message</span><span class="kh-where kw-mono">POST</span></div>
+			<div class="kh-body kw-fade" data-on="1 2 3 4">
+				<pre class="kw-mono"><span>{'{'} "type": "tap.verified",</span><span>  "data": {'{'}</span><span>    "id": "04DE5F1EACC040:61",</span><span>    "knot": "front-door",</span><span>    "counter": 61,</span><span>    "action": "test-hook" {'}'} {'}'}</span></pre>
+				<p class="kh-sig"><i class="kh-lock"></i><span class="kw-mono">webhook-signature: v1,K5oZ…</span></p>
+			</div>
+			<p class="kh-note kh-wait kw-fade on" data-on="0">Made for each webhook the tag has</p>
+		</div>
+
+		<div class="kh-wire">
+			<i class="kh-dot kh-a" data-on="2"></i>
+			<i class="kh-dot kh-b" data-on="2"></i>
+			<i class="kh-dot kh-c" data-on="2"></i>
+			<i class="kh-dot kh-d" data-on="4"></i>
+		</div>
+
+		<div class="kh-node kh-svc">
+			<div class="kh-head"><span class="kw-kick">Your service</span><span class="kh-where kw-mono">webhook.site/…</span></div>
+			<div class="kh-log">
+				<div class="kh-view on" data-on="0 1"><p class="kh-note">Waiting</p></div>
+				<ol class="kh-view" data-on="2">
+					<li class="kh-l kh-in kh-warn" style="--d: 0.9s"><b>503</b> Busy</li>
+					<li class="kh-l kh-in" style="--d: 1.1s">Retry in 1 s</li>
+					<li class="kh-l kh-in kh-warn" style="--d: 2.4s"><b>503</b> Busy</li>
+					<li class="kh-l kh-in" style="--d: 2.6s">Retry in 2 s</li>
+					<li class="kh-l kh-in kh-ok" style="--d: 4.4s"><b>200</b> OK</li>
+				</ol>
+				<ol class="kh-view" data-on="3">
+					<li class="kh-l kh-ok"><b>200</b> OK</li>
+					<li class="kh-l kh-in" style="--d: 0.4s"><Fragment set:html={tick} />Signature checked</li>
+					<li class="kh-l kh-in" style="--d: 1.2s"><Fragment set:html={tick} />Handled 04DE…C040:61</li>
+					<li class="kh-l kh-in" style="--d: 2s"><Fragment set:html={tick} />Front door lights on</li>
+				</ol>
+				<ol class="kh-view" data-on="4">
+					<li class="kh-l kh-ok"><b>200</b> OK</li>
+					<li class="kh-l"><Fragment set:html={tick} />Handled 04DE…C040:61</li>
+					<li class="kh-l kh-in kh-muted" style="--d: 1.6s">Same id again</li>
+					<li class="kh-l kh-in" style="--d: 2.2s"><Fragment set:html={tick} />Already handled, skipped</li>
+				</ol>
+			</div>
+		</div>
+	</div>
+</Walkthrough>
+
+<style is:global>
+	.kh { width: 272px; height: 470px; padding: 14px; border-radius: 22px; background: var(--kw-bg); border: 1px solid var(--kw-line-strong); color: var(--kw-fg); font: 11px/1.4 var(--sl-font); display: flex; flex-direction: column; }
+	.kh-node { position: relative; border-radius: 14px; background: var(--kw-card); border: 1px solid var(--kw-line); padding: 10px; display: flex; flex-direction: column; gap: 6px; }
+	.kh-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+	.kh-where { color: var(--kw-muted); font-size: 9.5px; }
+	.kh-note { margin: 0; color: var(--kw-muted); font-size: 10px; }
+	.kh-tap { display: flex; gap: 8px; align-items: center; margin: 0; font-weight: 600; }
+	.kh-tap svg { width: 18px; height: 18px; flex: none; }
+	.kh-tap .kw-mono { font-weight: 400; font-size: 9.5px; color: var(--kw-muted); }
+
+	.kh-wire { position: relative; height: 22px; margin: 0 auto; width: 2px; background: repeating-linear-gradient(to bottom, var(--kw-line-strong) 0 4px, transparent 4px 8px); }
+	.kh-dot { position: absolute; left: -4px; width: 10px; height: 10px; border-radius: 50%; background: var(--kw-accent); box-shadow: 0 0 10px var(--kw-accent); opacity: 0; }
+	.kh-dot.on { animation: kh-down 0.7s ease-in 0.3s both; }
+	.kh-dot.kh-a.on { animation-delay: 0.3s; }
+	.kh-dot.kh-b.on { animation-delay: 1.8s; }
+	.kh-dot.kh-c.on { animation-delay: 3.8s; }
+	.kh-dot.kh-d.on { animation-delay: 1s; }
+	@keyframes kh-down { 0% { top: -6px; opacity: 0; } 25%, 80% { opacity: 1; } 100% { top: 18px; opacity: 0; } }
+
+	/* The message */
+	.kh-msg { height: 150px; }
+	.kh-body { position: absolute; inset: 30px 10px 10px; display: flex; flex-direction: column; gap: 6px; }
+	.kh-body pre { margin: 0; padding: 0; background: none; border: 0; font-size: 8.8px; line-height: 1.45; color: var(--kw-fg); overflow: hidden; }
+	.kh-body pre span { display: block; white-space: pre; opacity: 0; }
+	.kh-body.on pre span { animation: kh-line 0.25s both; }
+	.kh-body.on pre span:nth-child(2) { animation-delay: 0.25s; }
+	.kh-body.on pre span:nth-child(3) { animation-delay: 0.5s; }
+	.kh-body.on pre span:nth-child(4) { animation-delay: 0.75s; }
+	.kh-body.on pre span:nth-child(5) { animation-delay: 1s; }
+	.kh-body.on pre span:nth-child(6) { animation-delay: 1.25s; }
+	.kh-sig { display: flex; align-items: center; gap: 6px; margin: 0; padding: 5px 7px; border-radius: 8px; background: var(--kw-tint); font-size: 8.8px; opacity: 0; }
+	.kh-body.on .kh-sig { animation: kh-line 0.3s 2s both; }
+	.kh-lock { width: 7px; height: 6px; margin-top: 3px; border-radius: 1.5px; background: var(--kw-accent); position: relative; flex: none; }
+	.kh-lock::before { content: ''; position: absolute; left: 1px; top: -4px; width: 5px; height: 5px; border: 1.2px solid var(--kw-accent); border-bottom: 0; border-radius: 3px 3px 0 0; box-sizing: border-box; }
+	.kh-wait { margin-top: 30px; text-align: center; }
+
+	/* Your service. Its views swap without fading, so lines that stay put don't blink. */
+	.kh-svc { flex: 1; }
+	.kh-log { position: relative; flex: 1; }
+	.kh-view { position: absolute; inset: 0; margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 5px; opacity: 0; }
+	.kh-view.on { opacity: 1; }
+	.kh-view .kh-note { margin-top: 14px; text-align: center; }
+	.kh-l { display: flex; align-items: center; gap: 6px; margin: 0; font-size: 10px; }
+	.kh-l b { font-family: var(--sl-font-mono); font-size: 9.5px; padding: 1px 5px; border-radius: 5px; }
+	.kh-l svg { width: 13px; height: 13px; flex: none; }
+	.kh-ok b { background: var(--kw-ok-tint); color: var(--kw-ok); }
+	.kh-warn b { background: var(--kw-warn-tint); color: var(--kw-warn); }
+	.kh-muted { color: var(--kw-muted); }
+	.kh-view.on .kh-in { animation: kh-line 0.3s var(--d, 0s) both; }
+	@keyframes kh-line { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+	@media (prefers-reduced-motion: reduce) {
+		.kh-body pre span, .kh-sig { opacity: 1; }
+		.kh-dot { display: none; }
+	}
+</style>

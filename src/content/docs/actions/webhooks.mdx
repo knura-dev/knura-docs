@@ -4,10 +4,13 @@ description: Send a signed message to any web address each time a tag is tapped.
 ---
 
 import { Steps, Tabs, TabItem } from '@astrojs/starlight/components';
+import WebhookWalkthrough from '../../../components/WebhookWalkthrough.astro';
 
 A webhook sends a signed JSON message to a web address you choose each time a tag is tapped and checked. Point it at your own code, Node-RED, n8n, IFTTT, Zapier, Make or anything else that takes a webhook.
 
 Only taps that were checked and never seen before send anything. A copied, replayed or forged link never starts a webhook, and nothing in the tap link can choose or change which webhook runs.
+
+<WebhookWalkthrough />
 
 ## Add a webhook
 

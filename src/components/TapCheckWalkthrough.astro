@@ -1,0 +1,174 @@
+---
+// Animated walkthrough of what happens when a phone taps a tag: the tag writes a one-time link, the
+// phone opens it at knurd, knurd checks it, and the same link a second time is refused.
+import Walkthrough from './Walkthrough.astro';
+
+const steps = [
+	{ title: 'Tap the tag', text: 'The tag counts the tap and makes a fresh link: its ID and tap count, encrypted (e), and a code only its own keys can make (c).', dur: 4600 },
+	{ title: 'The phone opens the link', text: 'The link points at your knurd, so the phone\'s browser asks it. No app needed.', dur: 3600 },
+	{ title: 'knurd checks it', text: 'knurd opens e with your keys to find the tag, checks c with that tag\'s own keys, and makes sure the count is higher than last time.', dur: 5400 },
+	{ title: 'Tap verified', text: 'knurd remembers the new count, starts the tag\'s actions and shows the result.', dur: 4200 },
+	{ title: 'A reused link is refused', text: 'Open the same link again and its count is no longer new, so nothing runs. A copied link is useless.', dur: 5000 },
+];
+const tick = `<svg class="kw-tick" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>`;
+const cross = `<svg class="kt-cross" viewBox="0 0 24 24"><path d="M7 7l10 10M17 7L7 17"/></svg>`;
+const link = 'desk.tail1234.ts.net/tap?e=9F3A21C4…&c=7C41D0E2…';
+---
+
+<Walkthrough steps={steps}>
+	<div class="kt">
+		<div class="kt-node kt-tag">
+			<div class="kt-chip"><span>NTAG<br />424 DNA</span><i class="kt-wave kw-fade" data-on="0"></i></div>
+			<div class="kt-meta">
+				<span class="kw-kick">Tag</span>
+				<b class="kw-mono">04DE5F1EACC040</b>
+				<span class="kt-count">Tap <span class="kt-roll"><span class="kt-n60">60</span><span class="kt-n61">61</span></span></span>
+			</div>
+			<span class="kt-count-flash kw-fade" data-on="0"></span>
+		</div>
+
+		<div class="kt-wire"><i class="kt-dot kt-down" data-on="0"></i></div>
+
+		<div class="kt-node kt-phone">
+			<div class="kt-bar">
+				<i class="kt-lock"></i>
+				<span class="kt-url kw-mono kw-fade" data-on="1 2 3 4">{link}</span>
+				<span class="kt-url kt-hint kw-fade on" data-on="0">Phone</span>
+				<i class="kt-reload kw-fade" data-on="4"></i>
+			</div>
+			<div class="kt-page">
+				<div class="kt-view kw-fade on" data-on="0">
+					<p class="kw-muted">New one-time link from the tag:</p>
+					<p class="kt-link kw-mono"><span>https://{link}</span></p>
+				</div>
+				<div class="kt-view kw-fade" data-on="1 2"><i class="kt-spin"></i><p class="kw-muted">Checking the tap…</p></div>
+				<div class="kt-view kw-fade" data-on="3">
+					<span class="kt-big kt-ok"><Fragment set:html={tick} /></span>
+					<p class="kw-h">Tap verified</p>
+					<p class="kw-muted">Genuine tag. Running its action now.</p>
+				</div>
+				<div class="kt-view kw-fade" data-on="4">
+					<span class="kt-big kt-warn">&#8635;</span>
+					<p class="kw-h">Link already used</p>
+					<p class="kw-muted">Each tap makes a new one-time link. Tap the tag again.</p>
+				</div>
+			</div>
+		</div>
+
+		<div class="kt-wire">
+			<i class="kt-dot kt-down" data-on="1"></i>
+			<i class="kt-dot kt-up" data-on="3"></i>
+			<i class="kt-dot kt-down kt-late" data-on="4"></i>
+		</div>
+
+		<div class="kt-node kt-knurd">
+			<div class="kt-head"><span class="kw-kick">knurd</span><span class="kt-where">your computer</span></div>
+			<div class="kt-log">
+				<div class="kt-view kt-now on" data-on="0"><p class="kt-idle">Waiting for taps</p></div>
+				<ol class="kt-view" data-on="1">
+					<li class="kt-l kt-in" style="--d: 0.9s"><span class="kw-mono">GET /tap?e=9F3A…&c=7C41…</span></li>
+				</ol>
+				<ol class="kt-view" data-on="2">
+					<li class="kt-l"><span class="kw-mono">GET /tap?e=9F3A…&c=7C41…</span></li>
+					<li class="kt-l kt-in" style="--d: 0.6s"><Fragment set:html={tick} />e opened: tag 04DE…C040, tap 61</li>
+					<li class="kt-l kt-in" style="--d: 1.8s"><Fragment set:html={tick} />c matches this tag's keys</li>
+					<li class="kt-l kt-in" style="--d: 3s"><Fragment set:html={tick} />61 is newer than 60</li>
+				</ol>
+				<ol class="kt-view" data-on="3">
+					<li class="kt-l"><span class="kw-mono">GET /tap?e=9F3A…&c=7C41…</span></li>
+					<li class="kt-l"><Fragment set:html={tick} />e opened: tag 04DE…C040, tap 61</li>
+					<li class="kt-l"><Fragment set:html={tick} />c matches this tag's keys</li>
+					<li class="kt-l"><Fragment set:html={tick} />61 is newer than 60</li>
+					<li class="kt-l kt-in" style="--d: 0.4s"><Fragment set:html={tick} />Saved 61, actions started</li>
+				</ol>
+				<ol class="kt-view" data-on="4">
+					<li class="kt-l kt-in" style="--d: 1.9s"><span class="kw-mono">GET /tap?e=9F3A…&c=7C41…</span></li>
+					<li class="kt-l kt-in" style="--d: 2.2s"><Fragment set:html={tick} />e opened: tag 04DE…C040, tap 61</li>
+					<li class="kt-l kt-in kt-bad" style="--d: 2.4s"><Fragment set:html={cross} />61 isn't newer than 61</li>
+					<li class="kt-l kt-in" style="--d: 2.6s">Nothing runs</li>
+				</ol>
+			</div>
+		</div>
+	</div>
+</Walkthrough>
+
+<style is:global>
+	.kt { width: 272px; height: 470px; padding: 14px; border-radius: 22px; background: var(--kw-bg); border: 1px solid var(--kw-line-strong); color: var(--kw-fg); font: 11px/1.4 var(--sl-font); display: flex; flex-direction: column; }
+	.kt-node { position: relative; border-radius: 14px; background: var(--kw-card); border: 1px solid var(--kw-line); padding: 10px; }
+	.kt-wire { position: relative; height: 26px; margin: 0 auto; width: 2px; background: repeating-linear-gradient(to bottom, var(--kw-line-strong) 0 4px, transparent 4px 8px); }
+	.kt-dot { position: absolute; left: -4px; width: 10px; height: 10px; border-radius: 50%; background: var(--kw-accent); box-shadow: 0 0 10px var(--kw-accent); opacity: 0; }
+	.kt-dot.on.kt-down { animation: kt-down 0.9s ease-in-out 0.4s 2 both; }
+	.kt-dot.on.kt-up { animation: kt-up 0.9s ease-in-out 0.2s 2 both; }
+	.kt-dot.on.kt-late { animation-delay: 0.9s; }
+	@keyframes kt-down { 0% { top: -6px; opacity: 0; } 20%, 80% { opacity: 1; } 100% { top: 22px; opacity: 0; } }
+	@keyframes kt-up { 0% { top: 22px; opacity: 0; } 20%, 80% { opacity: 1; } 100% { top: -6px; opacity: 0; } }
+
+	/* The tag */
+	.kt-tag { display: flex; gap: 12px; align-items: center; }
+	.kt-chip { position: relative; width: 58px; height: 58px; flex: none; border-radius: 50%; display: grid; place-items: center; background: #e8edf3; color: #0a0d12; font-size: 7.5px; font-weight: 700; text-align: center; line-height: 1.2; }
+	.kt-wave { position: absolute; inset: -6px; border-radius: 50%; border: 1.5px solid var(--kw-accent); }
+	.kt-wave.on { animation: kt-wave 1.4s ease-out 3 both; }
+	@keyframes kt-wave { 0% { transform: scale(0.8); opacity: 0.9; } 100% { transform: scale(1.3); opacity: 0; } }
+	.kt-meta { display: grid; gap: 1px; }
+	.kt-meta b { font-size: 11px; }
+	.kt-count { color: var(--kw-muted); }
+	.kt-roll { display: inline-grid; height: 1.4em; overflow: hidden; vertical-align: bottom; color: var(--kw-fg); font-weight: 700; }
+	.kt-roll > span { grid-area: 1 / 1; }
+	.kt-n60 { opacity: 0; }
+	.kt:has(.kt-wave.on) .kt-n60 { animation: kt-leave 0.4s 1.1s both; }
+	.kt:has(.kt-wave.on) .kt-n61 { animation: kt-arrive 0.4s 1.1s both; }
+	@keyframes kt-leave { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(-100%); } }
+	@keyframes kt-arrive { from { opacity: 0; transform: translateY(100%); } }
+	.kt-count-flash { position: absolute; inset: -1px; border-radius: 14px; border: 1px solid var(--kw-accent); pointer-events: none; }
+
+	/* The phone */
+	.kt-phone { padding: 0; overflow: hidden; height: 156px; display: flex; flex-direction: column; }
+	.kt-bar { position: relative; display: flex; align-items: center; gap: 6px; height: 28px; padding: 0 9px; border-bottom: 1px solid var(--kw-line); background: var(--kw-bg); }
+	.kt-lock { width: 7px; height: 6px; margin-top: 3px; border-radius: 1.5px; background: var(--kw-muted); position: relative; flex: none; }
+	.kt-lock::before { content: ''; position: absolute; left: 1px; top: -4px; width: 5px; height: 5px; border: 1.2px solid var(--kw-muted); border-bottom: 0; border-radius: 3px 3px 0 0; box-sizing: border-box; }
+	.kt-url { position: absolute; left: 22px; right: 26px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 9px; color: var(--kw-fg); }
+	.kt-hint { font-family: var(--sl-font); color: var(--kw-muted); }
+	.kt-reload { position: absolute; right: 9px; width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid var(--kw-accent); border-top-color: transparent; }
+	.kt-reload.on { animation: kt-turn 0.8s linear 2 both; }
+	@keyframes kt-turn { to { transform: rotate(360deg); } }
+	.kt-page { position: relative; flex: 1; }
+	.kt-view { position: absolute; inset: 0; margin: 0; padding: 10px; list-style: none; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; }
+	.kt-link { margin: 0; width: 100%; padding: 7px 8px; border-radius: 8px; background: var(--kw-tint); color: var(--kw-fg); font-size: 9px; word-break: break-all; }
+	.kt-link span { display: block; clip-path: inset(0 100% 0 0); }
+	.kt-view.on .kt-link span { animation: kt-type 1.6s 1.3s steps(24) both; }
+	@keyframes kt-type { to { clip-path: inset(0 0 0 0); } }
+	.kt-spin { width: 20px; height: 20px; border-radius: 50%; border: 2.5px solid var(--kw-line-strong); border-top-color: var(--kw-accent); }
+	.kt-view.on .kt-spin { animation: kt-turn 0.8s linear infinite; }
+	.kt-big { width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; font-size: 20px; font-weight: 700; }
+	.kt-big svg { width: 22px; height: 22px; }
+	.kt-ok { background: var(--kw-ok-tint); }
+	.kt-warn { background: var(--kw-warn-tint); color: var(--kw-warn); }
+	.kt-view.on .kt-big { animation: kt-pop 0.45s both; }
+	.kt-view[data-on='4'].on .kt-big, .kt-view[data-on='4'].on .kw-h, .kt-view[data-on='4'].on .kw-muted { animation: kt-pop 0.45s 2.6s both; }
+	@keyframes kt-pop { from { transform: scale(0.5); opacity: 0; } }
+
+	/* knurd */
+	.kt-knurd { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+	.kt-head { display: flex; justify-content: space-between; align-items: baseline; }
+	.kt-where { color: var(--kw-muted); font-size: 9.5px; }
+	.kt-log { position: relative; flex: 1; }
+	.kt-log .kt-view { padding: 0; align-items: stretch; justify-content: flex-start; gap: 6px; }
+	.kt-idle { margin: 18px 0 0; text-align: center; color: var(--kw-muted); }
+	/* The log's views swap without fading, so lines that stay put don't blink. */
+	.kt-log .kt-view { opacity: 0; }
+	.kt-log .kt-view.on { opacity: 1; }
+	.kt-l { display: flex; align-items: center; gap: 6px; margin: 0; font-size: 10px; }
+	.kt-l .kw-mono { font-size: 9px; color: var(--kw-muted); }
+	.kt-l svg { width: 13px; height: 13px; flex: none; }
+	.kt-cross { fill: none; stroke: var(--kw-warn); stroke-width: 2.6; stroke-linecap: round; }
+	.kt-bad { color: var(--kw-warn); }
+	.kt-view.on .kt-in { animation: kt-line 0.3s var(--d, 0s) both; }
+	@keyframes kt-line { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+	@media (prefers-reduced-motion: reduce) {
+		.kt-n61 { opacity: 1; transform: none; }
+		.kt-n60 { display: none; }
+		.kt-link span { clip-path: none; }
+		.kt-dot { display: none; }
+	}
+</style>
