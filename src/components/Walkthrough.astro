@@ -1,0 +1,180 @@
+---
+// The frame every animated walkthrough shares: the picture on the left (the default slot), the
+// numbered steps beside it, and the Pause button. Plain HTML, CSS and a small script: no video or
+// GIF to download, it follows the site's light or dark theme, and it holds still for people who
+// turn motion off.
+//
+// Inside the slot, give each part that belongs to some steps a `data-on` list of step numbers,
+// counted from 0, such as data-on="1 2". It gets the class `on` during those steps, and its
+// animations start again each time it turns on. `.kw-scr` parts fill the picture and fade in.
+interface Props {
+	steps: { title: string; text: string; dur: number }[];
+	note?: string;
+}
+const { steps, note = 'Example values. Click a step to jump to it.' } = Astro.props;
+---
+
+<figure class="kw not-content" data-kw>
+	<div class="kw-stage" aria-hidden="true">
+		<slot />
+	</div>
+	<figcaption class="kw-side">
+		<ol class="kw-steps">
+			{steps.map((s, i) => (
+				<li class={i === 0 ? 'active' : ''} data-dur={s.dur}>
+					<button type="button" data-go={i}>
+						<span class="kw-n">{i + 1}</span>
+						<b>{s.title}</b>
+						<small>{s.text}</small>
+						<span class="kw-bar"></span>
+					</button>
+				</li>
+			))}
+		</ol>
+		<div class="kw-controls">
+			<button type="button" data-toggle>Pause</button>
+			<span>{note}</span>
+		</div>
+	</figcaption>
+</figure>
+
+<style is:global>
+	.kw {
+		--kw-bg: #0a0d12; --kw-card: #121821; --kw-line: #1f2833; --kw-line-strong: #2c3846;
+		--kw-fg: #e8edf3; --kw-muted: #8b97a6; --kw-accent: #f28c3a; --kw-accent-fg: #160b02;
+		--kw-tint: rgba(242, 140, 58, 0.12); --kw-ok: #4ade9b; --kw-ok-tint: rgba(74, 222, 155, 0.12);
+		--kw-warn: #ffb86b; --kw-warn-tint: rgba(255, 184, 107, 0.12);
+		display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 2rem; align-items: center;
+		margin: 1.5rem 0 0; padding: 1.5rem; border: 1px solid var(--sl-color-hairline-light);
+		border-radius: 16px; background: var(--sl-color-bg-nav);
+	}
+	:root[data-theme='light'] .kw {
+		--kw-bg: #f6f8fa; --kw-card: #ffffff; --kw-line: #e4e8ee; --kw-line-strong: #d3d9e1;
+		--kw-fg: #0b1220; --kw-muted: #5a6675; --kw-accent: #b45309; --kw-accent-fg: #ffffff;
+		--kw-tint: rgba(180, 83, 9, 0.1); --kw-ok: #0f7a4c; --kw-ok-tint: rgba(21, 150, 95, 0.1);
+		--kw-warn: #b45309; --kw-warn-tint: rgba(180, 83, 9, 0.1);
+		background: var(--sl-color-gray-7, #f6f8fa);
+	}
+	@media (max-width: 40rem) { .kw { grid-template-columns: minmax(0, 1fr); justify-items: center; padding: 1rem; } }
+	.kw-stage { position: relative; }
+
+	/* Parts that come and go with the steps */
+	.kw-scr { position: absolute; inset: 0; padding: 30px 13px 14px; display: flex; flex-direction: column; gap: 9px; opacity: 0; transform: translateX(12px); transition: opacity 0.35s, transform 0.35s; }
+	.kw-scr.on { opacity: 1; transform: none; }
+	.kw-fade { opacity: 0; transition: opacity 0.35s; }
+	.kw-fade.on { opacity: 1; }
+
+	/* Pieces several pictures use */
+	.kw-card { margin: 0; padding: 10px; border-radius: 12px; background: var(--kw-card); border: 1px solid var(--kw-line); }
+	.kw-kick { color: var(--kw-accent); font-size: 9.5px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
+	.kw-h { margin: 0; font-size: 14px; font-weight: 700; text-align: center; }
+	.kw-muted { margin: 0; color: var(--kw-muted); font-size: 10px; text-align: center; }
+	.kw-mono { font-family: var(--sl-font-mono); }
+	.kw-grow { flex: 1; }
+	.kw-btn { position: relative; display: grid; place-items: center; min-height: 36px; border-radius: 11px; background: var(--kw-accent); color: var(--kw-accent-fg); font-weight: 700; font-size: 11px; }
+	.kw-ghost { background: transparent; border: 1px solid var(--kw-line-strong); color: var(--kw-fg); font-weight: 600; }
+	.kw-tick { fill: none; stroke: var(--kw-ok); stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+
+	/* Steps beside the picture */
+	.kw-side { min-width: 0; width: 100%; }
+	.kw-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+	.kw-steps li { margin: 0; }
+	.kw-steps button { position: relative; overflow: hidden; width: 100%; display: grid; grid-template-columns: auto 1fr; column-gap: 0.75rem; align-items: center; padding: 0.6rem 0.75rem; border: 1px solid transparent; border-radius: 12px; background: none; color: var(--sl-color-gray-3); font: inherit; text-align: left; cursor: pointer; }
+	.kw-steps button:hover { background: var(--knura-card); }
+	.kw-steps button:focus-visible { outline: 2px solid var(--sl-color-accent); outline-offset: 2px; }
+	.kw-n { grid-row: span 2; width: 1.6rem; height: 1.6rem; border-radius: 50%; display: grid; place-items: center; border: 1px solid var(--sl-color-hairline-light); font-size: 0.8rem; font-weight: 600; }
+	.kw-steps b { color: var(--sl-color-white); font-weight: 600; font-size: 0.95rem; }
+	.kw-steps small { grid-column: 2; display: none; font-size: 0.875rem; line-height: 1.5; }
+	.kw-steps li.active button { background: var(--knura-card); border-color: var(--sl-color-hairline-light); }
+	.kw-steps li.active small { display: block; }
+	.kw-steps li.active .kw-n { background: var(--sl-color-accent); border-color: var(--sl-color-accent); color: var(--sl-color-black); }
+	.kw-steps li.done .kw-n { color: var(--sl-color-accent); border-color: var(--sl-color-accent); }
+	.kw-bar { position: absolute; left: 0; bottom: 0; height: 2px; width: 100%; background: var(--sl-color-accent); transform-origin: left; transform: scaleX(0); }
+	.kw:not(.paused) .kw-steps li.active .kw-bar { animation: kw-progress var(--dur, 4s) linear both; }
+	@keyframes kw-progress { to { transform: scaleX(1); } }
+	.kw-controls { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; margin-top: 0.9rem; color: var(--sl-color-gray-3); font-size: 0.85rem; }
+	.kw-controls button { padding: 0.35rem 0.9rem; border-radius: 8px; border: 1px solid var(--sl-color-hairline-light); background: none; color: var(--sl-color-white); font: inherit; font-weight: 600; cursor: pointer; }
+
+	/* Paused or motion off: every step still makes sense, nothing moves on its own. Each picture
+	   adds the end states its own animations would reach. */
+	.kw.paused .kw-stage .on, .kw.paused .kw-stage .on * { animation-play-state: paused; }
+	@media (prefers-reduced-motion: reduce) {
+		.kw *, .kw-scr { animation: none !important; transition: none !important; }
+	}
+</style>
+
+<script>
+	for (const walk of document.querySelectorAll<HTMLElement>('[data-kw]')) {
+		const parts = [...walk.querySelectorAll<HTMLElement>('[data-on]')].map((el) => ({
+			el,
+			at: new Set(el.dataset.on!.split(/\s+/).map(Number)),
+		}));
+		const steps = walk.querySelectorAll<HTMLElement>('.kw-steps li');
+		const toggle = walk.querySelector<HTMLButtonElement>('[data-toggle]')!;
+		const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+		let current = 0;
+		let timer: ReturnType<typeof setTimeout> | undefined;
+		let playing = !still;
+
+		// A QR-looking pattern (decorative, not a real code), for pictures that show one.
+		const qrs = walk.querySelectorAll('[data-qr]');
+		if (qrs.length) {
+			let seed = 11;
+			const rnd = () => ((seed = (seed * 9301 + 49297) % 233280), seed / 233280);
+			const finder = (x: number, y: number) =>
+				`<rect x="${x}" y="${y}" width="7" height="7"/><rect x="${x + 1}" y="${y + 1}" width="5" height="5" fill="#fff"/><rect x="${x + 2}" y="${y + 2}" width="3" height="3"/>`;
+			let cells = '';
+			for (let y = 0; y < 25; y++)
+				for (let x = 0; x < 25; x++) {
+					const inFinder = (x < 8 && y < 8) || (x > 16 && y < 8) || (x < 8 && y > 16);
+					if (!inFinder && rnd() < 0.5) cells += `<rect x="${x}" y="${y}" width="1" height="1"/>`;
+				}
+			const qr = `<svg viewBox="0 0 25 25" shape-rendering="crispEdges" fill="#0a0d12">${cells}${finder(0, 0)}${finder(18, 0)}${finder(0, 18)}</svg>`;
+			qrs.forEach((el) => (el.innerHTML = qr));
+		}
+
+		const show = (i: number) => {
+			current = (i + steps.length) % steps.length;
+			for (const { el, at } of parts) {
+				const was = el.classList.contains('on');
+				if (!at.has(current)) el.classList.remove('on');
+				else if (!was || el.dataset.on!.trim() === String(current)) {
+					// Taking `on` off and back on starts the part's animations again. A part that
+					// stays on into the next step keeps going, so it doesn't flicker.
+					el.classList.remove('on');
+					void el.offsetWidth;
+					el.classList.add('on');
+				}
+			}
+			steps.forEach((s, k) => {
+				s.classList.toggle('active', k === current);
+				s.classList.toggle('done', k < current);
+			});
+			const dur = Number(steps[current].dataset.dur) || 4500;
+			steps[current].style.setProperty('--dur', `${dur}ms`);
+			const bar = steps[current].querySelector<HTMLElement>('.kw-bar')!;
+			bar.style.animation = 'none';
+			void bar.offsetWidth;
+			bar.style.animation = '';
+			clearTimeout(timer);
+			if (playing) timer = setTimeout(() => show(current + 1), dur);
+		};
+		const setPlaying = (p: boolean) => {
+			playing = p;
+			walk.classList.toggle('paused', !p);
+			toggle.textContent = p ? 'Pause' : 'Play';
+			clearTimeout(timer);
+			if (p) show(current);
+		};
+
+		walk.querySelectorAll<HTMLButtonElement>('[data-go]').forEach((b) =>
+			b.addEventListener('click', () => show(Number(b.dataset.go)))
+		);
+		toggle.addEventListener('click', () => setPlaying(!playing));
+		if (still) {
+			toggle.hidden = true;
+			walk.classList.add('paused');
+		}
+		show(0);
+	}
+</script>

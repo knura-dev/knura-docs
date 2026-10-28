@@ -4,6 +4,7 @@ description: From the release downloads to a phone tap your own server accepts, 
 ---
 
 import { Steps, Tabs, TabItem } from '@astrojs/starlight/components';
+import TapCheckWalkthrough from '../../../components/TapCheckWalkthrough.astro';
 
 This guide takes you from the files on the [Releases page](https://github.com/knura-dev/knura/releases) to a tag that a phone can tap and that your own server checks. You don't need to build anything.
 
@@ -145,6 +146,8 @@ A phone opens the link on the tag, so knurd needs an HTTPS address the phone can
 </Steps>
 
 Now tap the tag with your phone. You should see a **Tap verified** page. Refresh it and you'll see **Link already used**.
+
+<TapCheckWalkthrough />
 
 A new Funnel address can take up to 15 minutes to work from phones. If the phone shows a blank page, wait and try again.
 
