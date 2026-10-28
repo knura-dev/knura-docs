@@ -1,0 +1,152 @@
+---
+// Animated walkthrough of pairing the Knura app with your own knurd: a one-time QR code on the
+// computer, a restart, a scan and an unlock.
+import Walkthrough from './Walkthrough.astro';
+
+const steps = [
+	{ title: 'Make a pairing code', text: 'On knurd\'s computer, run knurctl admin pair-phone with a name for the phone. It shows a QR code that works once, for 15 minutes.', dur: 4600 },
+	{ title: 'Restart knurd', text: 'knurd reads the phone\'s name when it starts, and says phones may now set tags up.', dur: 3800 },
+	{ title: 'Scan the code', text: 'In the app, tap Scan pairing code and point the camera at the QR code.', dur: 4000 },
+	{ title: 'Unlock', text: 'Confirm with your fingerprint or screen lock. The app swaps the code for its own login, which never appears on screen.', dur: 3800 },
+	{ title: 'Paired', text: 'The app shows Paired. Tap Set up a tag and hold a blank tag to the back of the phone.', dur: 4400 },
+];
+const mark = `<svg width="16" height="16" viewBox="0 0 32 32"><rect x="2" y="2" width="28" height="28" rx="7" fill="none" stroke="var(--kw-accent)" stroke-width="2.5"/><rect x="8" y="8" width="16" height="16" rx="3.5" fill="none" stroke="var(--kw-accent)" stroke-width="2.5"/><rect x="13" y="13" width="6" height="6" rx="1" fill="var(--kw-fg)"/></svg>`;
+const tick = `<svg class="kw-tick" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>`;
+---
+
+<Walkthrough steps={steps}>
+	<div class="kp">
+		<div class="kp-term">
+			<div class="kp-term-head"><i></i><i></i><i></i><span>knurd's computer</span></div>
+			<div class="kp-term-body">
+				<div class="kp-tv on" data-on="0">
+					<p><span class="kp-ps">$</span> knurctl admin pair-phone fold7</p>
+					<p class="kp-out kp-in" style="--d: 0.8s">Made a pairing code for "fold7"</p>
+					<div class="kp-qrrow kp-in" style="--d: 1.2s">
+						<div class="kp-qr" data-qr></div>
+						<p class="kp-out">Restart knurd. Then, within 15 minutes, scan this code. It works once.</p>
+					</div>
+				</div>
+				<div class="kp-tv" data-on="2 3 4">
+					<p><span class="kp-ps">$</span> knurctl admin pair-phone fold7</p>
+					<p class="kp-out">Made a pairing code for "fold7"</p>
+					<div class="kp-qrrow">
+						<div class="kp-qr" data-qr></div>
+						<p class="kp-out">Restart knurd. Then, within 15 minutes, scan this code. It works once.</p>
+					</div>
+				</div>
+				<div class="kp-tv" data-on="1">
+					<p><span class="kp-ps">$</span> knurd</p>
+					<p class="kp-out kp-in" style="--d: 0.9s">knurd listening on http://127.0.0.1:8424</p>
+					<p class="kp-out kp-ok kp-in" style="--d: 1.5s">Phones may set tags up with these admin tokens: fold7</p>
+				</div>
+			</div>
+		</div>
+
+		<div class="kp-phone">
+			<div class="kp-screen">
+				<div class="kw-scr kp-pair on" data-on="0 1">
+					<div class="kp-top"><Fragment set:html={mark} /><b>Knura</b><span class="kp-pill kp-no">Not paired</span></div>
+					<p class="kp-title">Pair this phone with your knurd</p>
+					<p class="kp-small">Your keys stay on knurd. The phone only passes messages between knurd and the tag.</p>
+					<span class="kw-grow"></span>
+					<span class="kw-btn kp-btn">Scan pairing code<i class="kp-touch" data-on="1"></i></span>
+				</div>
+				<div class="kw-scr kp-cam" data-on="2">
+					<p class="kp-camtext">Point the camera at the QR code</p>
+					<div class="kp-view"><div class="kp-qr" data-qr></div><span class="kp-scanline"></span></div>
+				</div>
+				<div class="kw-scr kp-lock" data-on="3">
+					<span class="kw-grow"></span>
+					<div class="kp-finger"><svg viewBox="0 0 24 24"><path d="M12 4a7 7 0 0 0-7 7v2M19 13v-2a7 7 0 0 0-3-5.7M9 20c1-2 1.5-4 1.5-7a1.5 1.5 0 0 1 3 0c0 3-.5 5.5-1.8 7.6M15.6 19c.6-1.8.9-3.8.9-6a4.5 4.5 0 0 0-9 0c0 1.5-.2 3-.7 4.2"/></svg></div>
+					<p class="kp-title">Unlock to pair</p>
+					<p class="kp-small">Touch the fingerprint sensor</p>
+					<span class="kw-grow"></span>
+				</div>
+				<div class="kw-scr kp-home" data-on="4">
+					<div class="kp-top"><Fragment set:html={mark} /><b>Knura</b><span class="kp-pill">Paired</span></div>
+					<p class="kp-small kp-left">Pinned TLS · unlocks with your fingerprint</p>
+					<div class="kp-tiles">
+						<div class="kp-tile kp-hl"><b>Set up a tag</b><span>Give it Knura keys</span></div>
+						<div class="kp-tile"><b>Tag info</b><span>UID, keys, link</span></div>
+						<div class="kp-tile"><b>Check a tap</b><span>Is this tag genuine?</span></div>
+						<div class="kp-tile"><b>Reset tag</b><span>Back to factory keys</span></div>
+					</div>
+					<div class="kp-toast"><Fragment set:html={tick} /><b>Paired with knurd</b></div>
+				</div>
+			</div>
+		</div>
+	</div>
+</Walkthrough>
+
+<style is:global>
+	.kp { width: 272px; height: 470px; display: flex; flex-direction: column; gap: 12px; color: var(--kw-fg); font: 11px/1.4 var(--sl-font); }
+
+	/* The computer: a terminal stays dark in both themes, like the site's code blocks. */
+	.kp-term { height: 186px; border-radius: 14px; background: #070a0e; border: 1px solid #2c3846; overflow: hidden; color: #e8edf3; display: flex; flex-direction: column; }
+	.kp-term-head { display: flex; align-items: center; gap: 5px; padding: 7px 10px; border-bottom: 1px solid #1f2833; color: #8b97a6; font-size: 9.5px; }
+	.kp-term-head i { width: 7px; height: 7px; border-radius: 50%; background: #2c3846; }
+	.kp-term-head span { margin-left: 6px; }
+	.kp-term-body { position: relative; flex: 1; }
+	.kp-tv { position: absolute; inset: 0; padding: 9px 10px; font: 9.5px/1.45 var(--sl-font-mono); opacity: 0; }
+	.kp-tv.on { opacity: 1; }
+	.kp-tv p { margin: 0 0 3px; }
+	.kp-ps { color: #f28c3a; }
+	.kp-out { color: #8b97a6; }
+	.kp-ok { color: #4ade9b; }
+	.kp-qrrow { display: flex; gap: 10px; align-items: center; margin-top: 6px; }
+	.kp-qrrow .kp-out { font: 9.5px/1.45 var(--sl-font); }
+	.kp-qr { width: 84px; height: 84px; padding: 5px; border-radius: 4px; background: #fff; flex: none; }
+	.kp-qr svg { display: block; width: 100%; height: 100%; }
+	.kp-in { opacity: 0; }
+	.kp-tv.on .kp-in { animation: kp-line 0.3s var(--d, 0s) both; }
+	@keyframes kp-line { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+	/* The phone, cut off at the bottom of the picture */
+	.kp-phone { flex: 1; margin: 0 22px; padding: 8px 8px 0; border-radius: 30px 30px 0 0; background: #05070a; box-shadow: 0 0 0 1px #2c3846; overflow: hidden; }
+	.kp-screen { position: relative; height: 100%; border-radius: 23px 23px 0 0; overflow: hidden; background: var(--kw-bg); }
+	.kp-screen .kw-scr { padding: 18px 12px 14px; gap: 7px; }
+	.kp-top { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+	.kp-pill { margin-left: auto; padding: 2px 7px; border-radius: 99px; background: var(--kw-ok-tint); color: var(--kw-ok); font-size: 9px; font-weight: 600; }
+	.kp-no { background: var(--kw-warn-tint); color: var(--kw-warn); }
+	.kp-title { margin: 6px 0 0; font-size: 13px; font-weight: 700; }
+	.kp-small { margin: 0; color: var(--kw-muted); font-size: 9.5px; }
+	.kp-lock .kp-title, .kp-lock .kp-small { text-align: center; }
+	.kp-btn { min-height: 32px; font-size: 10.5px; }
+	.kp-touch { position: absolute; right: 22%; top: 50%; width: 24px; height: 24px; margin-top: -12px; border-radius: 50%; background: var(--kw-fg); opacity: 0; }
+	.kp-touch.on { animation: kp-tap 0.9s 2.4s both; }
+	@keyframes kp-tap { 0% { opacity: 0; transform: scale(1.6); } 30% { opacity: 0.25; transform: scale(1); } 60% { opacity: 0.35; transform: scale(0.85); } 100% { opacity: 0; transform: scale(1.3); } }
+
+	.kp-cam { background: #000; justify-content: center; align-items: center; }
+	.kp-camtext { margin: 0; color: #c9d2dc; font-size: 10px; }
+	.kp-view { position: relative; padding: 12px; border-radius: 12px; box-shadow: 0 0 0 2px #f28c3a; background: #1a1f26; overflow: hidden; }
+	.kp-view .kp-qr { transform: rotate(-5deg); }
+	.kp-scanline { position: absolute; left: 6%; right: 6%; top: 10%; height: 2px; background: #f28c3a; box-shadow: 0 0 12px #f28c3a; }
+	.kp-cam.on .kp-scanline { animation: kp-scan 1.4s ease-in-out 2 alternate both; }
+	@keyframes kp-scan { to { top: 88%; } }
+
+	.kp-lock { align-items: center; }
+	.kp-finger { width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; background: var(--kw-tint); }
+	.kp-finger svg { width: 30px; height: 30px; fill: none; stroke: var(--kw-accent); stroke-width: 1.6; stroke-linecap: round; }
+	.kp-lock.on .kp-finger { animation: kp-press 1.2s 1s both; }
+	@keyframes kp-press { 40% { transform: scale(0.9); background: var(--kw-ok-tint); } 100% { transform: none; background: var(--kw-ok-tint); } }
+	.kp-lock.on .kp-finger svg { animation: kp-stroke 0.3s 1.5s both; }
+	@keyframes kp-stroke { to { stroke: var(--kw-ok); } }
+
+	.kp-left { text-align: left; }
+	.kp-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+	.kp-tile { display: grid; gap: 1px; padding: 7px; border-radius: 10px; background: var(--kw-card); border: 1px solid var(--kw-line); }
+	.kp-tile b { font-size: 10px; }
+	.kp-tile span { color: var(--kw-muted); font-size: 8.5px; }
+	.kp-home.on .kp-hl { animation: kp-hl 0.4s 1.6s both; }
+	@keyframes kp-hl { to { border-color: var(--kw-accent); background: var(--kw-tint); } }
+	.kp-toast { display: flex; gap: 6px; align-items: center; margin-top: auto; padding: 7px 9px; border-radius: 10px; background: var(--kw-card); border: 1px solid var(--kw-line-strong); font-size: 10px; }
+	.kp-toast svg { width: 15px; height: 15px; flex: none; }
+	.kp-home.on .kp-toast { animation: kp-line 0.35s 0.3s both; }
+
+	@media (prefers-reduced-motion: reduce) {
+		.kp-in { opacity: 1; }
+		.kp-finger { background: var(--kw-ok-tint); }
+		.kp-hl { border-color: var(--kw-accent); background: var(--kw-tint); }
+	}
+</style>

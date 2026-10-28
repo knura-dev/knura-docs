@@ -1,0 +1,145 @@
+---
+title: Set a blank tag up with your phone
+description: Turn a blank NTAG 424 DNA tag into a Knura tag with the Android app, no USB reader needed.
+---
+
+import { Steps } from '@astrojs/starlight/components';
+import PairWalkthrough from '../../../components/PairWalkthrough.astro';
+
+The Knura app sets tags up, checks them and resets them with your phone's own NFC, so you don't need a USB reader. The phone only passes messages between the tag and knurd. knurd works out each tag's keys from your master key and checks every reply, and the keys never reach the phone.
+
+```
+tag ──NFC──▶ phone (Knura app) ──HTTPS on your Wi-Fi──▶ knurd's admin API (holds your master key)
+```
+
+:::tip[Using a hosted account?]
+Skip steps 1 and 3. Install the app, pair the phone on your account's page, and scan that code with **Scan pairing code**. Everything else works the same, with your keys kept on the hosted server.
+:::
+
+## What you need
+
+- **knurd working with your phone**, up to **Tap verified**. See [Your first verified tap](/start-here/first-verified-tap). `public.url` must be set.
+- **An Android phone with NFC**, Android 11 or newer, with a screen lock.
+- **The phone and knurd's computer on the same network.**
+- **Blank NTAG 424 DNA tags.** Got tags with a claim card? Use [Claim a ready-to-use tag](/tags/claim-a-tag) instead.
+
+Run every `knurctl` command below in your settings folder, where `knurd.properties` is.
+
+## 1. Let the phone reach knurd
+
+The phone talks to knurd's **admin API**, which normally only answers its own computer. Over Wi-Fi it uses TLS.
+
+<Steps>
+
+1. Find this computer's address on your network. Use the one that looks like `192.168.x.x`:
+
+   ```sh
+   ip -4 addr | grep inet
+   ```
+
+   Give this computer a fixed address in your router, because the phone remembers it.
+
+2. Make the admin API's certificate, if you haven't yet:
+
+   ```sh
+   knurctl admin tls create
+   ```
+
+3. In `knurd.properties`, set that address:
+
+   ```properties
+   admin.listen.host=192.168.1.50
+   ```
+
+4. Let port 8425 through the firewall. On Fedora:
+
+   ```sh
+   sudo firewall-cmd --add-port=8425/tcp --permanent && sudo firewall-cmd --reload
+   ```
+
+</Steps>
+
+:::caution[Keep port 8425 at home]
+Never forward port 8425 on your router or put it on Tailscale Funnel. It's for your own network only, and knurd refuses admin requests that come through a tunnel.
+:::
+
+## 2. Install the app
+
+<Steps>
+
+1. On the phone, open this link and download the app: **[knura.apk](https://github.com/knura-dev/knura/releases/download/android-latest/knura.apk)**. It's always the newest build.
+2. Open the download and tap **Install**.
+3. When Android asks, allow **Install unknown apps** for your browser. If Play Protect warns about an unknown developer, choose **Install anyway**.
+
+</Steps>
+
+Only install the app from that link or a [Knura release page](https://github.com/knura-dev/knura/releases). To check a download, compare its SHA-256 with `knura.apk.sha256` on the same page.
+
+## 3. Pair the phone
+
+<PairWalkthrough />
+
+<Steps>
+
+1. Make a pairing code, with any name for the phone:
+
+   ```sh
+   knurctl admin pair-phone fold7
+   ```
+
+   This adds `fold7` to `admin.provision.tokens` in `knurd.properties` and shows a QR code.
+
+2. Restart knurd. Its first lines should say `Phones may set tags up with these admin tokens: fold7`.
+
+3. Within 15 minutes, tap **Scan pairing code** in the app, scan the QR code, and unlock with your fingerprint or screen lock.
+
+</Steps>
+
+The code works once and only for 15 minutes, so a photo of it is useless afterwards. If it ran out, run `pair-phone` again with the same name.
+
+## 4. Set up a tag
+
+<Steps>
+
+1. Tap **Set up a tag**, then **Start, then hold the tag**, and unlock.
+2. Hold a blank tag flat against the back of the phone until the result screen comes up. It takes a few seconds. If nothing happens, slide the tag slowly around the back: phones read tags at one spot only.
+3. The result shows the tag's UID and what changed. **What knurd did** has knurd's full log, and **Copy details** copies it all.
+
+</Steps>
+
+Tap the tag like any other tag: you should see **Tap verified**. Then give it something to do, such as a [webhook](/actions/webhooks) or [Home Assistant](/actions/home-assistant).
+
+If the tag slips away halfway through, run the same action again. Its main key is always changed last, so a tag is never left in a state knurd can't fix.
+
+## The other tiles
+
+| Tile | What it does |
+| --- | --- |
+| **Set up a tag** | Knura keys and your tap link. Turn on **Tag already has Knura keys** to re-point a tag knurd already set up, such as after you move to tap.knura.io. |
+| **Tag info** | UID, link, whose keys it has, and whether the link checks out. |
+| **Check a tap** | Reads the tag like a phone tap and checks it with your keys. |
+| **Reset tag** | All keys back to factory, no link. Turn the switch off for a tag that still has factory keys. |
+| **Claim a tag** | For a ready-to-use tag that came with a claim card. See [Claim a ready-to-use tag](/tags/claim-a-tag). |
+
+Under **knurd**, three rows only read: **Status** (keys, public URL, resolver), **Tags** (every tag knurd has accepted) and **Recent taps** (the latest 20, each marked Genuine, Replay, Rejected or Malformed).
+
+## If you lose the phone
+
+Remove its token on the computer, and knurd refuses it straight away:
+
+```sh
+knurctl admin token remove fold7
+```
+
+Setting up keys, TLS, new tokens and the resolver stays on the computer, so a lost phone can't open up your setup. Every phone session is written to knurd's admin audit log with the phone's name and the tag's UID.
+
+## If something goes wrong
+
+| The app says | What to do |
+| --- | --- |
+| Can't reach knurd at https://... | Is knurd running, the phone on the same Wi-Fi, and port 8425 open? Does `admin.listen.host` match the address? |
+| knurd's certificate isn't the one this phone was paired with | You made a new certificate. Forget knurd in the app, run `pair-phone` with a new name and pair again. |
+| setting tags up through a phone is off | Restart knurd after `pair-phone`. |
+| this token may not set tags up | The name isn't in `admin.provision.tokens`. |
+| the tag refused the key | Flip **Tag already has Knura keys**, or check the tag with **Tag info**. |
+| another phone is setting a tag up | Wait 20 seconds for the earlier attempt to time out. |

@@ -15,7 +15,7 @@ Skip this page. Pair the Knura app with your account and set tags up from the ph
 ## What you need
 
 - **NTAG 424 DNA tags.** Stickers, cards or key fobs with this exact chip. Plain NTAG 213, 215 or 216 tags won't work.
-- **A way to set tags up**: a USB NFC reader that speaks PC/SC (such as the ACS ACR122U), or an Android phone with NFC and the [Knura app](https://github.com/knura-dev/knura/blob/main/docs/android-app.md). This guide uses the reader.
+- **A way to set tags up**: a USB NFC reader that speaks PC/SC (such as the ACS ACR122U), or an Android phone with NFC and the Knura app ([Set a blank tag up with your phone](/tags/set-up-with-phone)). This guide uses the reader.
 - **A computer to run knurd** (Linux, macOS or Windows) that stays on while you want taps to work.
 - **Java 21 or newer** on that computer.
 
@@ -78,7 +78,7 @@ knurctl init
 This writes `knurd.properties` with a new random **master key**. Every tag you set up gets its own keys worked out from it.
 
 :::caution[Back it up]
-Keep a copy of `knurd.properties` somewhere safe and private, such as a password manager or an encrypted USB stick. Without it you can't verify or reset your tags. Never share it or put it in Git.
+Keep a copy of `knurd.properties` somewhere safe and private, such as a password manager or an encrypted USB stick. Without it you can't verify or reset your tags. Never share it or put it in Git. [Back up and move your keys](/home/keys-backup) shows how.
 :::
 
 ## 4. Set up a tag
