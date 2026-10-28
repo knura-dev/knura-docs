@@ -1,0 +1,101 @@
+---
+title: Back up and move your keys
+description: What to back up, how to restore it, and how to move knurd to another computer.
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+Every tag's keys are worked out from one **master key** in your settings folder. Your tags don't need a backup, but that folder does: without it you can't check, re-point or reset any tag you set up, and there is no way to get the key back.
+
+:::tip[Using a hosted account?]
+There's nothing to back up. Your hosted account keeps the master key encrypted on the server, and it can't be downloaded.
+:::
+
+## What's in your settings folder
+
+The folder where you ran `knurctl init`, such as `~/knura/home`:
+
+| File | What it holds | Without it |
+| --- | --- | --- |
+| `knurd.properties` | Your master key, your tap.knura.io key, and knurd's settings. | **Every tag is lost.** Nothing can check, re-point or reset them. |
+| The file named in `master.key.file` | Your master key, if you keep it in its own file. | The same. |
+| `knurd-counters.properties` | Each tag's last tap count. | An old link could work once more for each tag. |
+| `knurgn.properties`, `knurgn-secrets.properties` | Your action rules, webhook secrets and Home Assistant webhook ids. | Write the rules again and make new secrets. |
+| `knurd-admin-tokens.properties`, `knurd-admin.p12` | Phone logins and the admin API's certificate. | Pair your phones again. |
+
+The simplest rule: **back up the whole folder.**
+
+## Make a backup
+
+This packs the folder into one encrypted file. `gpg` asks for a passphrase; keep it in your password manager.
+
+```sh
+cd ~/knura
+tar czf - home | gpg --symmetric --cipher-algo AES256 -o knura-home-$(date +%F).tar.gz.gpg
+```
+
+Copy the `.gpg` file somewhere off this computer: a USB stick you keep safe, or your password manager's file storage. Then delete the local copy.
+
+:::caution[Never in plain sight]
+Don't put the folder, or an unencrypted copy of it, in Git, a shared drive or a chat. Anyone with your master key can make your tags' links themselves.
+:::
+
+**Make a new backup** after you:
+
+- run `knurctl init` (a new master key)
+- run `knurctl resolver register` (a new tap.knura.io key)
+- change your action rules or secrets
+- pair or remove a phone
+
+Tap counts change with every tap, so an older backup is fine for them. Restoring one only means each tag's links from after the backup could work once more.
+
+## Restore it
+
+<Steps>
+
+1. Unpack the backup where your settings folder should be:
+
+   ```sh
+   mkdir -p ~/knura && cd ~/knura
+   gpg -d knura-home-2026-10-28.tar.gz.gpg | tar xzf -
+   ```
+
+2. Check that the secret files are still readable by you only. knurd refuses to start otherwise:
+
+   ```sh
+   ls -l home
+   ```
+
+   Files with keys or secrets should show `-rw-------`. If one doesn't, run `chmod 600` on it.
+
+3. Start knurd from the folder and tap a tag. You should see **Tap verified**.
+
+</Steps>
+
+## Move knurd to another computer
+
+<Steps>
+
+1. **Stop knurd on the old computer**, and keep it stopped. Two knurds with the same master key each keep their own tap counts, so a link used on one would still work on the other.
+
+2. **Install knurd and knurctl** on the new computer from the [latest release](https://github.com/knura-dev/knura/releases), as in [Your first verified tap](/start-here/first-verified-tap) steps 1 and 2.
+
+3. **Restore your settings folder** there, as above.
+
+4. **Give it a public address.** Set `public.url` in `knurd.properties` to the new computer's address, for example its own [Tailscale Funnel](https://tailscale.com/kb/1223/funnel) address.
+
+5. **Send your taps to it.**
+   - If your tags carry a **tap.knura.io** link, start knurd, then point tap.knura.io at the new address. The tags stay as they are:
+
+     ```sh
+     knurctl resolver register
+     knurctl resolver check
+     ```
+
+   - If your tags carry the **old computer's address**, rewrite each one with `knurctl provision --from knura`, or with **Set up a tag** in the app with **Tag already has Knura keys** turned on.
+
+6. **Pair phones again** if the new computer has another network address. Set `admin.listen.host` to it, restart knurd and run `knurctl admin pair-phone` with a new name. If the app says knurd's certificate isn't the one it was paired with, forget knurd in the app first. See [Set a blank tag up with your phone](/tags/set-up-with-phone).
+
+</Steps>
+
+Moving often? Register with tap.knura.io once. Tags then carry a link that never changes, and a move is one `resolver register` instead of rewriting every tag.

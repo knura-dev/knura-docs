@@ -1,0 +1,181 @@
+---
+title: Home Assistant
+description: Start a Home Assistant automation from a tap through its webhook trigger, with no login token.
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+Tap a tag and run a Home Assistant automation: turn on a light, start a scene, send a notification. This takes about 15 minutes once your tags work.
+
+```
+tag ──tap──▶ phone ──▶ knurd checks the tap ──▶ knurgN ──webhook──▶ Home Assistant automation
+```
+
+knurgN uses Home Assistant's **webhook trigger**, so it needs no Home Assistant login or access token. It can start the automations that listen on your webhook id, and nothing else in your home.
+
+:::caution[Not for locks]
+Don't use taps for locks, garage doors or alarms yet. A tap proves the tag is genuine, not who tapped it.
+:::
+
+## Before you start
+
+- **Your tags work.** Tapping a tag shows **Tap verified** on your phone. If not, start with [Your first verified tap](/start-here/first-verified-tap).
+- **Home Assistant runs on your home network**, version 2024.10 or newer: Home Assistant OS, Container or a virtual machine.
+- **knurd is 0.2.0-alpha or newer.** Run everything below in your settings folder, where `knurd.properties` is.
+
+## 1. Find Home Assistant's address
+
+knurgN needs Home Assistant's **IP address**, not `homeassistant.local`. You'll find it in Home Assistant under **Settings → System → Network**, or on the Home Assistant OS console. It looks like `192.168.1.50`.
+
+Keep the port you use in your browser: if the address ends in `:8123`, keep `:8123`; if it has none, leave it off. From knurd's computer, this should print `200`:
+
+```sh
+curl -s -o /dev/null -w '%{http_code}\n' http://192.168.1.50:8123/
+```
+
+Then **give Home Assistant a fixed address**, with a DHCP reservation in your router or **Settings → System → Network → IPv4 → Static**, so it never moves.
+
+<details>
+<summary>Running Home Assistant in VirtualBox?</summary>
+
+VirtualBox's default network (NAT) hides the virtual machine from your computer, so knurd can't reach it. Shut the VM down, open **Settings → Network → Adapter 1**, set **Attached to** to **Bridged Adapter** and pick your network card. Start it again; its console shows the new address.
+
+If `ping` works but `curl` says "Connection refused", Home Assistant is still installing itself. The first start can take 20 minutes.
+
+</details>
+
+## 2. Make a webhook id
+
+The webhook id works like a password: anyone who has it can start the automation. Make a long random one and keep it handy, because it goes in two places:
+
+```sh
+openssl rand -hex 24
+```
+
+Don't share it in chats, screenshots or Git.
+
+## 3. Add the automation
+
+In Home Assistant, open **Settings → Automations & scenes → Create automation → Create new automation**. From the **⋮** menu, choose **Edit in YAML**, replace everything with this, and paste in your webhook id:
+
+```yaml
+alias: Knura desk-tag tap
+description: Runs when the desk-tag tag is tapped (sent by Knura)
+mode: single
+triggers:
+  - trigger: webhook
+    webhook_id: PASTE_YOUR_WEBHOOK_ID_HERE
+    allowed_methods:
+      - POST
+    local_only: true
+conditions:
+  # Only this tag, and only taps from the last minute.
+  - condition: template
+    value_template: >
+      {{ trigger.json.data.knot == 'desk-tag'
+         and (now() - as_datetime(trigger.json.data.tappedAt)).total_seconds() | abs < 60 }}
+actions:
+  - action: persistent_notification.create
+    data:
+      title: Knura
+      message: "{{ trigger.json.data.knot }} was tapped (tap {{ trigger.json.data.counter }})"
+```
+
+Save it. `desk-tag` is the name you give the tag in the next step. A notification is a safe first test that changes nothing in your home.
+
+Keep `local_only: true`, so Home Assistant ignores the webhook if it comes from the internet.
+
+## 4. Tell knurgN about Home Assistant
+
+<Steps>
+
+1. Get the tag's UID with the tag on the reader. It's 14 characters, like `04406B02936980`:
+
+   ```sh
+   knurctl info
+   ```
+
+2. Create `knurgn.properties` with your UID and the address from step 1:
+
+   ```properties
+   knot.04406B02936980.name=desk-tag
+   knot.04406B02936980.actions=living-room
+   homeassistant.living-room.url=http://192.168.1.50:8123
+   secrets.file=knurgn-secrets.properties
+   ```
+
+   `living-room` is your name for this connection; pick any. Already have a `knurgn.properties`? Add the `homeassistant.` line and add `living-room` to the tag's `actions`, separated by a comma: `actions=test-hook,living-room`.
+
+3. Save the webhook id in the secrets file. The line starts with the connection name and `=`:
+
+   ```sh
+   (umask 077; echo 'living-room=PASTE_YOUR_WEBHOOK_ID_HERE' >> knurgn-secrets.properties)
+   ```
+
+4. If knurd doesn't run actions yet, switch them on (once):
+
+   ```sh
+   grep -q '^actions.file' knurd.properties || echo 'actions.file=knurgn.properties' >> knurd.properties
+   ```
+
+</Steps>
+
+## 5. Tap
+
+Restart knurd. It should print `knurgN: 1 knot(s) with actions`. Then tap the tag with your phone:
+
+- the phone shows **Tap verified**
+- knurd prints `action=living-room: delivered`
+- Home Assistant shows a notification under the bell: "desk-tag was tapped"
+
+## 6. Make it do something
+
+Edit the automation and replace its `actions:`. For example, toggle a light:
+
+```yaml
+actions:
+  - action: light.toggle
+    target:
+      entity_id: light.living_room
+```
+
+Scenes (`scene.turn_on`), scripts and media players work the same way. For more tags, give each one its own `knot.<UID>.name`, and either its own automation with its own webhook id, or one automation that checks `trigger.json.data.knot`.
+
+The automation can use everything about the tap in `trigger.json.data`:
+
+| Field | What it is |
+| --- | --- |
+| `knot` | The tag's name from `knurgn.properties`. |
+| `uid` | The tag's UID. |
+| `counter` | How many times the tag has been tapped. Goes up by one every tap. |
+| `tappedAt` | When the tap was checked. |
+| `id` | `UID:counter`, the same on every retry of one tap. |
+| `action` | Which connection sent it, like `living-room`. |
+| `name` | The tag's name on a hosted account's dashboard, when it has one. |
+
+## Using a hosted account?
+
+The hosted account checks the taps, and the **home link**, a small program on a computer at home, runs the rules. It uses a `knurgn.properties` and secrets file written exactly as in step 4, in its own folder, so steps 1 to 3 and 6 are the same. Instead of the `actions.file` line, you pair the home link from the dashboard. You can also choose `living-room` for a tag on the dashboard instead of writing its knot rule.
+
+A tag chosen on the dashboard has no knot name, so match it in Home Assistant by `trigger.json.data.uid`, or show `trigger.json.data.name` in a notification.
+
+## Troubleshooting
+
+| What you see | What to do |
+| --- | --- |
+| knurd: `no secret for homeassistant living-room` | `knurgn-secrets.properties` has no `living-room=...` line. |
+| knurd: `has a line that isn't <connector id>=<secret>` | You pasted the id without `living-room=` in front. |
+| knurd: `the Home Assistant webhook id ... must be 32 to 128 letters` | The id is too short or has odd characters. Make one with `openssl rand -hex 24`. |
+| knurd: `must use https://, except for ... a private network address` | Use the IP address (`http://192.168.1.50`), not `homeassistant.local`. |
+| knurd: `knot.YOUR_TAG_UID: a tag UID is 14 hex digits` | Put your tag's real UID from `knurctl info` in `knurgn.properties`. |
+| knurd says `delivered`, but nothing happens | Home Assistant answers OK even for a wrong id, so nobody can guess ids. Check the id matches in both places and the knot name matches. Home Assistant's log (**Settings → System → Logs**) says "unregistered webhook" when the id is wrong. |
+| knurd: `expired` | knurd can't reach Home Assistant. Check the address and port with the `curl` in step 1. |
+
+## How it stays safe
+
+- **Only genuine, first-time taps reach Home Assistant.** knurd refuses copied or reused links before knurgN sees them, and the link can't choose the action: knurgN picks it by the tag's checked UID.
+- **No login token.** knurgN holds only the webhook id, which starts the automations that listen on it and nothing else.
+- **The id is kept secret.** knurd refuses to start if other users can read the secrets file, never logs the id or the full address, and refuses ids under 32 characters. If one leaks, make a new one and change it in both places.
+- **Home Assistant can't check signatures**, unlike signed [webhooks](/actions/webhooks). That's why the id must be long and random, and the automation checks `tappedAt` and keeps `local_only: true`.
+- **Plain `http://` only on your own network**: to this computer or a private address written as numbers (`192.168.x.x`, `10.x.x.x`, `172.16–31.x.x`). Anything else needs `https://`. Redirects are never followed.
+- **Retries** happen for network errors and 5xx answers for up to 30 seconds after the tap, then the tap is dropped rather than run late. A retry has the same `id`, so an automation that must never run twice can remember the last id it handled.
