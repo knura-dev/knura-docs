@@ -1,0 +1,128 @@
+---
+title: knurgn.properties
+description: Every setting in knurgn.properties and knurgn-secrets.properties, with example files to copy.
+---
+
+`knurgn.properties` says what can run when a tag is tapped: the **connectors** (where a tap goes) and, if you want them, **knot rules** (which tag runs which connectors). Its secrets live next to it in `knurgn-secrets.properties`, which only you may read.
+
+Both knurd and the home link read these files. knurd finds them through `actions.file` in `knurd.properties`; the home link reads the `knurgn.properties` in its own folder.
+
+## Example files
+
+Swap in your own UIDs and addresses, and make your own secrets with the commands under [knurgn-secrets.properties](#settings-in-knurgn-secretsproperties).
+
+### Home link, choosing tags on the dashboard
+
+The shortest setup for a [home link](/reference/link-properties): list your connectors, then pick which tag uses them on the dashboard. No knot rules needed.
+
+```properties title="knurgn.properties"
+# What this home link can run. Each tag picks on the dashboard.
+homeassistant.living-room.url=http://192.168.1.112:8123
+secrets.file=knurgn-secrets.properties
+```
+
+```properties title="knurgn-secrets.properties"
+living-room=PASTE_YOUR_WEBHOOK_ID_HERE
+```
+
+### Everything, with knot rules
+
+Knot rules give a tag a name and the connectors it runs. You need them when knurd runs your actions, or for a home link tag with nothing switched on in the dashboard.
+
+```properties title="knurgn.properties"
+# --- Tags (knots) -----------------------------------------------
+# The front door tag runs Home Assistant and a webhook.
+knot.04356B02936980.name=front-door
+knot.04356B02936980.actions=living-room,test-hook
+
+# The desk tag turns on a Matter light.
+knot.04406B02936980.name=desk-tag
+knot.04406B02936980.actions=matter-home
+
+# --- Connectors --------------------------------------------------
+# Home Assistant's webhook trigger. Use its IP address, not homeassistant.local.
+homeassistant.living-room.url=http://192.168.1.112:8123
+
+# Any service that takes a signed webhook.
+webhook.test-hook.url=https://webhook.site/your-unique-id
+
+# The knurgN Matter bridge on this computer.
+matter.matter-home.url=http://127.0.0.1:5541/tap
+
+# --- Secrets -----------------------------------------------------
+secrets.file=knurgn-secrets.properties
+```
+
+```properties title="knurgn-secrets.properties"
+# <connector id>=<secret>, one line per connector. Only you may read this file.
+living-room=PASTE_YOUR_WEBHOOK_ID_HERE
+test-hook=whsec_PASTE_YOUR_SECRET_HERE
+matter-home=whsec_PASTE_YOUR_SECRET_HERE
+```
+
+Download: [knurgn.properties](/examples/knurgn.properties) · [knurgn-secrets.properties](/examples/knurgn-secrets.properties)
+
+## Settings in knurgn.properties
+
+| Setting | What it does |
+| --- | --- |
+| `knot.<UID>.name` | A name for the tag, sent as `knot` in every event. Optional; without it, `knot` is the UID. |
+| `knot.<UID>.actions` | The connectors this tag runs, separated by commas, like `living-room,test-hook`. Every knot needs it. |
+| `homeassistant.<id>.url` | Home Assistant's address, like `http://192.168.1.112:8123`. knurgN posts to its webhook trigger. |
+| `webhook.<id>.url` | Any address that takes a signed webhook. |
+| `matter.<id>.url` | The knurgN Matter bridge, like `http://127.0.0.1:5541/tap`. |
+| `secrets.file` | The secrets file, next to this one. Default `knurgn-secrets.properties`. |
+
+- **UID** is the tag's 14 hex digits, like `04356B02936980`. Get it with `knurctl info` or from the tag's page on the dashboard.
+- **Names and ids** use 1 to 64 letters, digits, `.`, `_` or `-`. The id is your name for the connector, and it's the name the dashboard lists for a home link.
+- **Any other setting is an error**, so a typo can't quietly switch a rule off. A setting ending in `.secret` is refused here: secrets go in the secrets file.
+
+### Home Assistant addresses
+
+Plain `http` is only allowed to this computer or a private IP address (like `192.168.x.x` or `10.x.x.x`), not to a name like `homeassistant.local`. Keep the port you use in your browser. With plain `http`, knurgN logs a warning when it starts, because anyone who can watch your home network's traffic could read the webhook id. Use Home Assistant's `https` address if it has one.
+
+## Settings in knurgn-secrets.properties
+
+Each line is `<connector id>=<secret>`. Every connector needs one, and every line must match a connector, or knurgN won't start.
+
+| Connector | Secret | Make one with |
+| --- | --- | --- |
+| `homeassistant` | The automation's webhook id: 32 to 128 letters, digits, `_` or `-` | `openssl rand -hex 24` |
+| `webhook`, `matter` | `whsec_` and 24 to 64 random bytes in base64 | `printf 'whsec_%s\n' "$(openssl rand -base64 32)"` |
+
+Write the file so only you can read it. knurgN refuses to read it if other users can:
+
+```sh
+# Home Assistant: the same webhook id as in your automation
+(umask 077; echo 'living-room=PASTE_YOUR_WEBHOOK_ID_HERE' >> knurgn-secrets.properties)
+# A webhook or the Matter bridge: a new random secret
+(umask 077; printf 'test-hook=whsec_%s\n' "$(openssl rand -base64 32)" >> knurgn-secrets.properties)
+```
+
+Never share these secrets in chats, screenshots or Git.
+
+## What each connector receives
+
+Every connector gets the same JSON for a tap. Home Assistant sees it as `trigger.json`:
+
+```json
+{
+  "type": "tap.verified",
+  "timestamp": "2026-10-31T23:51:41.064Z",
+  "data": {
+    "id": "04356B02936980:13",
+    "knot": "front-door",
+    "name": "Front door",
+    "uid": "04356B02936980",
+    "counter": 13,
+    "tappedAt": "2026-10-31T23:51:40.702Z",
+    "action": "living-room"
+  }
+}
+```
+
+- `knot` is the knot rule's name, or the UID if the tag has no rule.
+- `name` is the tag's name on the dashboard. It's only there for taps from a hosted account.
+- `id` stays the same if a delivery is retried, so you can use it to skip duplicates.
+
+For automations that use these fields, see [Home Assistant automations](/reference/home-assistant-automations).

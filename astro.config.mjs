@@ -34,6 +34,10 @@ export default defineConfig({
 				{ label: 'Tags', items: ['tags/claim-a-tag', 'tags/set-up-with-phone'] },
 				{ label: 'Actions', items: ['actions/webhooks', 'actions/home-assistant', 'actions/check-a-webhook-signature'] },
 				{ label: 'Run it at home', items: ['home/keys-backup'] },
+				{
+					label: 'Reference',
+					items: ['reference/knurgn-properties', 'reference/link-properties', 'reference/home-assistant-automations'],
+				},
 			],
 		}),
 	],

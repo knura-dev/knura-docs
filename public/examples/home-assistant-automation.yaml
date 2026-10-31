@@ -1,0 +1,22 @@
+# Example from https://docs.knura.io/reference/home-assistant-automations
+alias: Knura front door tap
+description: Shows a notification when the front door tag is tapped (sent by Knura)
+mode: single
+triggers:
+  - trigger: webhook
+    webhook_id: PASTE_YOUR_WEBHOOK_ID_HERE
+    allowed_methods:
+      - POST
+    local_only: true
+conditions:
+  - condition: template
+    value_template: >
+      {{ trigger.json.data.uid == '04356B02936980'
+         and (now() - as_datetime(trigger.json.data.tappedAt)).total_seconds() | abs < 60 }}
+actions:
+  - action: persistent_notification.create
+    data:
+      title: Knura
+      message: >-
+        {{ trigger.json.data.name | default(trigger.json.data.knot) }} was tapped
+        (tap {{ trigger.json.data.counter }})

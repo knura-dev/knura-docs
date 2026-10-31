@@ -1,0 +1,138 @@
+---
+title: Home Assistant automations
+description: Ready-to-paste Home Assistant automations for Knura taps.
+---
+
+Each example is a whole automation. In Home Assistant, open **Settings → Automations & scenes → Create automation → Create new automation**, choose **Edit in YAML** from the **⋮** menu, paste it in, and put in your webhook id and your tag's UID.
+
+These hold for all of them:
+
+- **The webhook id** is the secret for your `homeassistant.` connector in [knurgn-secrets.properties](/reference/knurgn-properties). Make one with `openssl rand -hex 24` and put the same id in both places.
+- **Keep `local_only: true`**, so Home Assistant ignores the webhook if it comes from the internet. knurgN and the home link send it from your home network.
+- **Keep the 60-second check** on `tappedAt`, so a tap that arrives late doesn't run.
+- **Match on `uid`** unless the tag has a knot rule. A tag with no rule sends its UID as `knot`.
+
+:::caution[Not for locks]
+Don't use taps for locks, garage doors or alarms yet. A tap proves the tag is genuine, not who tapped it.
+:::
+
+## A notification
+
+A safe first test that changes nothing in your home.
+
+```yaml
+alias: Knura front door tap
+description: Shows a notification when the front door tag is tapped (sent by Knura)
+mode: single
+triggers:
+  - trigger: webhook
+    webhook_id: PASTE_YOUR_WEBHOOK_ID_HERE
+    allowed_methods:
+      - POST
+    local_only: true
+conditions:
+  - condition: template
+    value_template: >
+      {{ trigger.json.data.uid == '04356B02936980'
+         and (now() - as_datetime(trigger.json.data.tappedAt)).total_seconds() | abs < 60 }}
+actions:
+  - action: persistent_notification.create
+    data:
+      title: Knura
+      message: >-
+        {{ trigger.json.data.name | default(trigger.json.data.knot) }} was tapped
+        (tap {{ trigger.json.data.counter }})
+```
+
+`name` is the tag's name on the dashboard. It's only sent for taps from a hosted account, so `default(...)` falls back to the knot name.
+
+## Toggle a light
+
+```yaml
+alias: Knura desk light
+description: Turns the desk lamp on or off when the desk tag is tapped
+mode: single
+triggers:
+  - trigger: webhook
+    webhook_id: PASTE_YOUR_WEBHOOK_ID_HERE
+    allowed_methods:
+      - POST
+    local_only: true
+conditions:
+  - condition: template
+    value_template: >
+      {{ trigger.json.data.uid == '04406B02936980'
+         and (now() - as_datetime(trigger.json.data.tappedAt)).total_seconds() | abs < 60 }}
+actions:
+  - action: light.toggle
+    target:
+      entity_id: light.desk_lamp
+```
+
+Use your light's entity id from **Settings → Devices & services → Entities**.
+
+## Several tags, one automation
+
+Every tag that runs the same `homeassistant.` connector uses its webhook id. One automation can tell the tags apart with `choose`:
+
+```yaml
+alias: Knura taps
+description: One automation for every Knura tag on this webhook
+mode: queued
+triggers:
+  - trigger: webhook
+    webhook_id: PASTE_YOUR_WEBHOOK_ID_HERE
+    allowed_methods:
+      - POST
+    local_only: true
+conditions:
+  - condition: template
+    value_template: >
+      {{ (now() - as_datetime(trigger.json.data.tappedAt)).total_seconds() | abs < 60 }}
+actions:
+  - choose:
+      - conditions: "{{ trigger.json.data.uid == '04356B02936980' }}"
+        sequence:
+          - action: scene.turn_on
+            target:
+              entity_id: scene.welcome_home
+      - conditions: "{{ trigger.json.data.uid == '04406B02936980' }}"
+        sequence:
+          - action: light.toggle
+            target:
+              entity_id: light.desk_lamp
+    default:
+      - action: persistent_notification.create
+        data:
+          title: Knura
+          message: "A tag with no automation yet was tapped: {{ trigger.json.data.uid }}"
+```
+
+`mode: queued` runs taps that come close together one after another instead of dropping them.
+
+Would you rather keep automations separate? Give each one its own connector and webhook id, like `homeassistant.hallway.url` and `homeassistant.desk.url` pointing at the same Home Assistant, each with its own line in `knurgn-secrets.properties`.
+
+## Skip duplicate deliveries
+
+If Home Assistant is slow to answer, knurgN may send the same tap again. Every delivery of one tap has the same `trigger.json.data.id`. For an action that mustn't run twice, keep the last id in a text helper (`input_text.knura_last_tap`, made under **Settings → Devices & services → Helpers**). Add this condition:
+
+```yaml
+conditions:
+  - condition: template
+    value_template: "{{ trigger.json.data.id != states('input_text.knura_last_tap') }}"
+```
+
+and make this the first action:
+
+```yaml
+actions:
+  - action: input_text.set_value
+    target:
+      entity_id: input_text.knura_last_tap
+    data:
+      value: "{{ trigger.json.data.id }}"
+```
+
+## Download
+
+[home-assistant-automation.yaml](/examples/home-assistant-automation.yaml): the notification example, ready to paste.

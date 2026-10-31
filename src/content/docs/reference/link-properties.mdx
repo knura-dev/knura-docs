@@ -1,0 +1,61 @@
+---
+title: link.properties
+description: The home link's settings files, what knura-link pair writes, and the settings you can add.
+---
+
+The home link (`knura-link`) keeps its settings in one folder, like `~/knura/home-link`:
+
+| File | Who writes it | What's in it |
+| --- | --- | --- |
+| `link.properties` | `knura-link pair` | Where to connect and which account. You can add settings. |
+| `link-secrets.properties` | `knura-link pair` | The home link's login token. Only you can read it. |
+| `knurgn.properties` | You | Your connectors and rules. See [knurgn.properties](/reference/knurgn-properties). |
+| `knurgn-secrets.properties` | You | Your connector secrets. |
+
+## Example file
+
+What `knura-link pair` writes, plus the settings you can add at the end:
+
+```properties title="link.properties"
+#Knura home link
+url=wss\://link.app.knura.io/
+owner=k7mq2xw9pd
+secrets.file=link-secrets.properties
+actions.file=knurgn.properties
+
+# Added by you, all optional:
+dashboard.connectors=living-room
+log.level=info
+log.file=logs/knura-link.log
+```
+
+`link-secrets.properties` holds one line, `token=knlink_…`. Don't write or copy it yourself. If you lose it, remove the home link on the dashboard, add it again and run `knura-link pair`. knura-link refuses to read it if other users can, and it never logs the token.
+
+Download: [link.properties](/examples/link.properties)
+
+## Settings
+
+| Setting | What it does |
+| --- | --- |
+| `url` | Your hosted account's home link address. Written by `knura-link pair`; leave it as it is. |
+| `owner` | Your account's id. Written by `knura-link pair`. |
+| `secrets.file` | The file with the login token. Default `link-secrets.properties`. |
+| `actions.file` | Your knurgN file. Default `knurgn.properties`. |
+| `dashboard.connectors` | Which connectors the dashboard may choose for a tag, separated by commas, or `none`. Leave it out to offer all of them. |
+| `log.level` | `error`, `warn`, `info` (the default), `debug` or `trace`. |
+| `log.file` | Also write the log to this file. It starts a new file every 10 MB and keeps four old ones. |
+
+Any other setting is an error. Restart knura-link after a change.
+
+### dashboard.connectors
+
+When it connects, the home link tells your account the **ids** of the connectors it offers (like `living-room`), never their addresses or secrets. The dashboard lists only those, and the home link checks every tap against this list, so the account can't run a connector you didn't offer.
+
+```properties
+# Only offer these two
+dashboard.connectors=living-room,test-hook
+# Or offer none: every tag then follows the knot rules in knurgn.properties
+dashboard.connectors=none
+```
+
+Every id here must be a connector in `knurgn.properties`, or knura-link won't start. It prints what it offers when it starts: `the dashboard can choose living-room`.
