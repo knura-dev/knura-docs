@@ -1,0 +1,82 @@
+---
+title: knurctl files
+description: The admin API's token files, knurctl's creds file, and a tag keys file for tags set up by other software.
+---
+
+Most of knurctl's work needs only [knurd.properties](/reference/knurd-properties). These files come in when you use knurd's admin API, or set up a tag that other software already changed.
+
+## knurctl-creds.properties
+
+How knurctl logs in to knurd's admin API. `knurctl admin token add <name>` writes it; pass it with `--creds`:
+
+```sh
+knurctl admin status --creds knurctl-creds.properties
+```
+
+On the computer knurd runs on, the token add command writes this:
+
+```properties title="knurctl-creds.properties"
+# knurctl admin settings: knurd's admin API and the token "laptop" to log in with.
+# This file is a password. Keep it chmod 600, never commit or share it. If it leaks,
+# run on knurd's computer: knurctl admin token remove laptop
+# Use it with: knurctl admin status --creds <this file>
+knurd.url=http://127.0.0.1:8425
+knurd.token=knurd_...
+```
+
+For another computer on your network, run `knurctl admin tls create` first. Then the creds file points at knurd's network address and pins its certificate:
+
+```properties title="knurctl-creds.properties"
+knurd.url=https://192.168.1.20:8425
+knurd.token=knurd_...
+knurd.fingerprint=WRITTEN_BY_KNURCTL_ADMIN_TOKEN_ADD
+```
+
+| Setting | What it does |
+| --- | --- |
+| `knurd.url` | knurd's admin address. `http://` is only allowed for this computer. |
+| `knurd.token` | The login token, starting `knurd_`. |
+| `knurd.fingerprint` | The SHA-256 of knurd's admin certificate, 64 hex digits, so knurctl trusts that certificate and no other. |
+
+Any other setting is an error. knurctl refuses the file if other users can read it. Copy it to another computer with `scp`, then `chmod 600` it there. If it leaks, run `knurctl admin token remove <name>` on knurd's computer.
+
+A knurd in `admin.security=plaintext` mode needs no creds file: knurctl reads `knurd.properties` instead.
+
+## knurd-admin-tokens.properties
+
+knurd's list of admin tokens. `knurctl admin token add` writes it, and knurd reads it again whenever it changes, so you don't restart knurd.
+
+```properties title="knurd-admin-tokens.properties"
+# knurd admin API tokens: name=sha256 of the token. Made by 'knurctl admin token add'.
+# The tokens themselves are not stored here; knurd reads this file again when it changes.
+laptop=sha256:...
+pixel=sha256:...
+```
+
+It holds only a hash of each token, never the token. Manage it with knurctl, not by hand:
+
+```sh
+knurctl admin token add laptop      # a new token, and its creds file
+knurctl admin token list
+knurctl admin token remove laptop   # that token stops working at once
+```
+
+## A tag keys file
+
+For a tag that other software set up with its own keys. Pass it to knurctl with `--from`, for example to give the tag Knura keys:
+
+```sh
+knurctl provision --from old-tag.keys
+```
+
+```properties title="old-tag.keys"
+# The tag's current keys, 32 hex digits each. Leave out a key that is still the factory key.
+key0=PASTE_KEY_0_HERE
+key2=PASTE_KEY_2_HERE
+```
+
+| Setting | What it does |
+| --- | --- |
+| `key0` to `key4` | The tag's current key in that slot, 32 hex digits. A missing slot means it's still the factory key (all zeros). |
+
+Other values for `--from`: `factory` (a new tag), `knura` (set up with your master key) or `claim:CODE` (a [ready-to-use tag](/tags/claim-a-tag)). Keep a keys file private, and delete it once the tag has Knura keys.

@@ -1,0 +1,124 @@
+---
+title: knurd.properties
+description: Every knurd setting, what knurctl init writes, and complete examples for self-hosting.
+---
+
+`knurd.properties` holds knurd's settings and your **master key**, which unlocks every tag set up with it. knurctl reads the same file, so keep it in your settings folder and run both from there.
+
+:::danger[Keep it secret, keep a backup]
+Anyone with `master.key` can make copies of your taps. Without it, you can't verify or reset your tags. Keep the file private (`chmod 600`) and keep a copy somewhere safe, like a password manager. See [Back up and move your keys](/home/keys-backup).
+:::
+
+## What knurctl init writes
+
+Start with `knurctl init`, never by hand. It makes a new random master key:
+
+```properties title="knurd.properties"
+# Settings for knurd and knurctl. Keep this file secret: master.key unlocks every
+# tag set up with it. If you lose it, tags set up with it can only be verified or
+# reset with a backup of this file.
+listen.host=127.0.0.1
+listen.port=8424
+# The HTTPS address phones use to reach knurd, e.g. a Tailscale Funnel name.
+# knurctl provision writes <public.url>/tap onto tags, or a tap.knura.io link that
+# forwards there once you run: knurctl resolver register
+#public.url=https://your-computer.your-tailnet.ts.net
+master.key=YOUR_MASTER_KEY_FROM_KNURCTL_INIT
+counters.file=knurd-counters.properties
+```
+
+## A complete example
+
+A knurd that phones reach through Tailscale Funnel and tap.knura.io, runs actions, and lets knurctl and a phone use the admin API. The `resolver.` and `admin.` lines are written by the commands named in the comments.
+
+```properties title="knurd.properties"
+# --- Where knurd listens ------------------------------------------
+listen.host=127.0.0.1
+listen.port=8424
+public.url=https://fedora.your-tailnet.ts.net
+
+# --- Keys and replay protection -------------------------------------
+master.key=YOUR_MASTER_KEY_FROM_KNURCTL_INIT
+counters.file=knurd-counters.properties
+
+# --- What a tap does -------------------------------------------------
+actions.file=knurgn.properties
+
+# --- Logging -----------------------------------------------------------
+log.level=info
+log.file=logs/knurd.log
+
+# --- tap.knura.io (written by: knurctl resolver register) ------------
+resolver.url=https://tap.knura.io
+resolver.owner=k7mq2xw9pd
+resolver.publicKey=WRITTEN_BY_KNURCTL_RESOLVER_REGISTER
+resolver.key=WRITTEN_BY_KNURCTL_RESOLVER_REGISTER
+
+# --- Admin API (written by: knurctl admin token add, admin tls create)
+admin.tokens.file=knurd-admin-tokens.properties
+admin.listen.host=192.168.1.20
+admin.listen.port=8425
+admin.tls.keystore=knurd-admin.p12
+admin.tls.password.file=knurd-admin.p12.password
+admin.provision.tokens=pixel
+```
+
+Download: [knurd.properties](/examples/knurd.properties)
+
+## Settings
+
+### Where knurd listens
+
+| Setting | Default | What it does |
+| --- | --- | --- |
+| `listen.host` | `127.0.0.1` | The address knurd's tap port listens on. `127.0.0.1` is this computer only, which is right behind a tunnel or reverse proxy. `0.0.0.0` is every network interface. |
+| `listen.port` | `8424` | The tap port. It serves only `/tap`, `/health` and `/.well-known/knura-owner`, which are safe on the internet. |
+| `public.url` | none | The `https://` address phones use to reach knurd, without `/tap`, like a Tailscale Funnel name. `http://` is only allowed for `localhost`. knurctl writes `<public.url>/tap` onto tags. |
+
+### Keys
+
+Use **either** a master key **or** fixed SDM keys, not both.
+
+| Setting | What it does |
+| --- | --- |
+| `master.key` | 32 hex digits. knurd works out each tag's own keys from it and the tag's UID. Written by `knurctl init`. |
+| `master.key.file` | The same key alone in its own private file, instead of `master.key`. For Docker or Kubernetes secrets. |
+| `sdm.fileReadKey` | Fixed key for tags set up by other software, shared by all tags. 32 hex digits. |
+| `sdm.fileReadKey.<UID>` | A fixed key for one tag. Wins over the shared one, and also works next to `master.key`. |
+| `sdm.metaReadKey` | Fixed key that decrypts the tag's UID and counter, for tags whose links are encrypted. |
+| `counters.file` | Where knurd keeps the last counter per tag. Default `knurd-counters.properties`. Don't edit or delete it: a knurd that loses it accepts old tap links again. |
+
+### Actions and logs
+
+| Setting | What it does |
+| --- | --- |
+| `actions.file` | Your [knurgn.properties](/reference/knurgn-properties). Leave it out for no actions. |
+| `log.level`, `log.file` | See [Logs](/reference/files#logs). |
+
+### tap.knura.io
+
+`knurctl resolver register` writes these. Don't write them by hand. Tags then carry a `tap.knura.io` link that forwards to `public.url`, so you can change your address later without rewriting tags.
+
+| Setting | What it does |
+| --- | --- |
+| `resolver.url` | The resolver. Default `https://tap.knura.io`. |
+| `resolver.owner` | Your owner id: 10 characters from `a`-`z` and `2`-`9`. Needs `public.url`. |
+| `resolver.publicKey` | Your owner key's public half, 64 hex digits. knurd checks every record the resolver serves with it. |
+| `resolver.key` | Your owner key. Secret: whoever has it can send your taps elsewhere. Only knurctl uses it. |
+
+### Admin API
+
+A second port for knurctl and the Knura app to manage knurd. It's off unless `admin.tokens.file` or `admin.security` is set. Never put this port on the internet: knurd refuses public addresses and requests that came through a proxy or tunnel.
+
+| Setting | Default | What it does |
+| --- | --- | --- |
+| `admin.security` | `token` | `token`: every request needs a login token. `plaintext`: no login, and it only listens on `127.0.0.1`. |
+| `admin.tokens.file` | none | The token hashes, written by `knurctl admin token add`. Needed with `token`. |
+| `admin.listen.host` | `127.0.0.1` | An IP address on this computer or your home network (or `0.0.0.0` in a container). Anything but `127.0.0.1` needs TLS. |
+| `admin.listen.port` | `8425` | Must differ from `listen.port`. |
+| `admin.tls.keystore` | none | The TLS certificate, written by `knurctl admin tls create`. |
+| `admin.tls.password.file` | none | Its password file. Set both TLS settings or neither. |
+| `admin.audit.file` | `knurd-admin-audit.log` | Every request, allowed or refused, as one JSON line. Tokens and keys are never written. |
+| `admin.provision.tokens` | none | Token names, separated by commas, that may set tags up with a phone's NFC. Needs `token` mode, `master.key` and `public.url`. Name only your own phones. |
+
+Paths are relative to the folder `knurd.properties` is in.

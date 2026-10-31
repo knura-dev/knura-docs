@@ -1,0 +1,68 @@
+---
+title: knurgn-matter.properties
+description: Settings for the Matter bridge, which shows tags as contact sensors in Apple Home, Google Home, Alexa and SmartThings.
+---
+
+The knurgN Matter bridge shows each tag you list as a **contact sensor** in your smart-home app. A tap "opens" the sensor for a few seconds, so any app routine can start from it. It runs on the same computer as knurd or the home link, from the `knurgn-matter` folder of the Knura source.
+
+It uses three files, in its own folder:
+
+| File | Made by | Private | What it's for |
+| --- | --- | --- | --- |
+| `knurgn-matter.properties` | You | No | Which tags to show, and the ports |
+| `knurgn-matter-secret` | You | Yes | The secret knurgN signs taps with |
+| `knurgn-matter-storage/` | The bridge | Yes | Its pairing code and the keys of the apps it's paired with. Back it up: deleting it unpairs the bridge everywhere. |
+
+## Example files
+
+```properties title="knurgn-matter.properties"
+# The knots to show, by their names in knurgn.properties, separated by commas.
+knots=desk-tag,front-door
+
+# The name each sensor shows in your app (up to 32 characters). Optional.
+knot.desk-tag.label=Desk
+knot.front-door.label=Front door
+
+# How long a sensor stays open after a tap. Taps closer together count as one.
+pulse.seconds=3
+
+# knurgN posts taps to http://127.0.0.1:<listen.port>/tap. Only this computer can reach it.
+listen.port=5541
+# The Matter port your smart-home hub talks to on your home network.
+matter.port=5540
+
+storage.dir=knurgn-matter-storage
+secret.file=knurgn-matter-secret
+```
+
+Then connect it in [knurgn.properties](/reference/knurgn-properties), with the same port:
+
+```properties title="knurgn.properties"
+matter.matter-home.url=http://127.0.0.1:5541/tap
+knot.04406B02936980.name=desk-tag
+knot.04406B02936980.actions=matter-home
+```
+
+The bridge and knurgN share one secret. Make it once and put it in both files:
+
+```sh
+SECRET="whsec_$(openssl rand -base64 32)"
+(umask 077; echo "$SECRET" > knurgn-matter-secret)
+(umask 077; echo "matter-home=$SECRET" >> ../knurgn-secrets.properties)   # wherever knurgn.properties lives
+```
+
+Download: [knurgn-matter.properties](/examples/knurgn-matter.properties)
+
+## Settings
+
+| Setting | Default | What it does |
+| --- | --- | --- |
+| `knots` | none (needed) | The knot names to show, from `knot.<UID>.name` in knurgn.properties. A tag without a knot rule goes by its UID. |
+| `knot.<name>.label` | the knot name | The sensor's name in your app, 1 to 32 characters. |
+| `pulse.seconds` | `3` | How long a sensor stays open after a tap, 1 to 60. |
+| `listen.port` | `5541` | Where the bridge takes taps from knurgN. It only listens on `127.0.0.1`. |
+| `matter.port` | `5540` | The Matter port on your home network. |
+| `storage.dir` | `knurgn-matter-storage` | Where it keeps its pairing data. Made private (`chmod 700`). |
+| `secret.file` | `knurgn-matter-secret` | The file with the `whsec_` secret alone. The bridge refuses to start if other users can read it. |
+
+Any other setting is an error, and a setting ending in `secret` is refused here: the secret goes in `secret.file`. Paths are relative to the bridge's folder.
