@@ -121,7 +121,11 @@ If the tag slips away halfway through, run the same action again. Its main key i
 | **Reset tag** | All keys back to factory, no link. Turn the switch off for a tag that still has factory keys. |
 | **Claim a tag** | For a ready-to-use tag that came with a claim card. See [Claim a ready-to-use tag](/tags/claim-a-tag). |
 
-Under **knurd**, three rows only read: **Status** (keys, public URL, resolver), **Tags** (every tag knurd has accepted) and **Recent taps** (the latest 20, each marked Genuine, Replay, Rejected or Malformed).
+:::note[Check a tap is a test]
+**Check a tap** reads the tag and checks its signature, but it is not a real tap. It doesn't run the tag's actions, doesn't use up the link, and doesn't count in the app's tap chart or in **Taps**. That's why the link it shows still works if you open it afterwards. Only taps that reach your tap link, from a phone tap or a browser, count.
+:::
+
+The bottom menu's **Tags**, **Taps** and **Server** tabs only read: every tag your server has accepted, the latest taps (each marked Verified, Replayed, Rejected or Malformed), and the server's status and tokens.
 
 ## If you lose the phone
 
