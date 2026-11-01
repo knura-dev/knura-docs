@@ -77,8 +77,15 @@ knurctl init
 
 This writes `knurd.properties` with a new random **master key**. Every tag you set up gets its own keys worked out from it.
 
-:::caution[Back it up]
-Keep a copy of `knurd.properties` somewhere safe and private, such as a password manager or an encrypted USB stick. Without it you can't verify or reset your tags. Never share it or put it in Git. [Back up and move your keys](/home/keys-backup) shows how.
+:::caution[Back it up now]
+Without the master key you can't verify or reset your tags, and there's no way to get it back. Before your first tag, run:
+
+```sh
+knurctl backup create    # an encrypted copy of this folder, locked with a passphrase
+knurctl backup sheet     # a one-page recovery sheet to print and keep
+```
+
+Never share `knurd.properties` or put it in Git. [Back up and move your keys](/home/keys-backup) has the details.
 :::
 
 ## 4. Set up a tag
