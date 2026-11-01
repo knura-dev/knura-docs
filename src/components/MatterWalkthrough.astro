@@ -1,0 +1,163 @@
+---
+// Animated walkthrough of the Matter bridge: pair it once in a smart-home app, make a routine,
+// then a tap opens the tag's contact sensor and the routine runs.
+import Walkthrough from './Walkthrough.astro';
+
+const steps = [
+	{ title: 'Pair the bridge', text: 'The bridge prints a pairing code. Add it in your app as a Matter device, and it shows up as Knura taps.', dur: 4600 },
+	{ title: 'Make a routine', text: 'Each tag is a contact sensor. Make a routine that starts when the sensor opens.', dur: 4200 },
+	{ title: 'Tap the tag', text: 'knurd checks the tap, and knurgN sends it to the bridge, signed, on this computer only.', dur: 4000 },
+	{ title: 'The sensor opens', text: 'The bridge opens the tag\'s sensor over Matter, and your hub runs the routine.', dur: 4400 },
+	{ title: 'It closes again', text: 'After 3 seconds the sensor closes, ready for the next tap. The lamp stays on.', dur: 4000 },
+];
+const tick = `<svg class="kw-tick" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>`;
+const bulb = `<svg viewBox="0 0 24 24"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2V16h5v-.1c0-.8.4-1.5 1-2A6 6 0 0 0 12 3z"/></svg>`;
+const door = `<svg viewBox="0 0 24 24"><path d="M6 21V4.5A1.5 1.5 0 0 1 7.5 3h9A1.5 1.5 0 0 1 18 4.5V21M4 21h16M14.5 12.5v.01"/></svg>`;
+---
+
+<Walkthrough steps={steps}>
+	<div class="km">
+		<div class="km-chain">
+			<div class="km-node"><span class="km-disc"></span><b>Tag</b><i class="km-wave kw-fade" data-on="2"></i></div>
+			<div class="km-wire"><i class="km-dot" data-on="2"></i></div>
+			<div class="km-node"><span class="km-box">k</span><b>knurd</b></div>
+			<div class="km-wire"><i class="km-dot km-late" data-on="2"></i></div>
+			<div class="km-node"><span class="km-box km-bridge">M</span><b>Bridge</b></div>
+		</div>
+
+		<div class="km-term">
+			<div class="km-log on" data-on="0">
+				<p>not paired yet. Add it in your</p>
+				<p>smart-home app with this code:</p>
+				<p class="km-code">Manual pairing code: 3497-011-2332</p>
+			</div>
+			<div class="km-log" data-on="1"><p class="km-ok">paired with a smart-home app</p><p>showing 1 knot(s): desk-candle</p></div>
+			<div class="km-log" data-on="2"><p>tap 04406B02936980:61</p><p class="km-ok">signature checked · pressed desk-candle</p></div>
+			<div class="km-log" data-on="3"><p class="km-ok">Desk candle: open</p><p>closes in 3 s</p></div>
+			<div class="km-log" data-on="4"><p>Desk candle: closed</p><p>ready for the next tap</p></div>
+		</div>
+
+		<div class="km-air"><i class="km-dot km-down" data-on="3"></i><span>Matter, on your home network</span></div>
+
+		<div class="km-phone">
+			<div class="km-screen">
+				<div class="kw-scr km-add on" data-on="0">
+					<p class="km-title">Add a Matter device</p>
+					<div class="km-view"><div class="km-qr" data-qr></div><span class="km-scanline"></span></div>
+					<div class="km-found kw-card">
+						<b>Knura taps</b>
+						<span class="km-pill km-warn">Uncertified accessory</span>
+					</div>
+					<span class="kw-btn">Add anyway<i class="km-touch"></i></span>
+				</div>
+				<div class="kw-scr km-home" data-on="1 2 3 4">
+					<p class="km-title">Home</p>
+					<div class="km-tiles">
+						<div class="km-tile km-sensor">
+							<span class="km-ico"><Fragment set:html={door} /></span>
+							<b>Desk candle</b>
+							<span class="km-state kw-fade on" data-on="1 2 4">Closed</span>
+							<span class="km-state km-open kw-fade" data-on="3">Open</span>
+							<i class="km-ring kw-fade" data-on="3"></i>
+						</div>
+						<div class="km-tile km-lamp">
+							<span class="km-ico"><Fragment set:html={bulb} /></span>
+							<b>Desk lamp</b>
+							<span class="km-state kw-fade on" data-on="1 2">Off</span>
+							<span class="km-state km-on kw-fade" data-on="3 4">On</span>
+							<i class="km-glow kw-fade" data-on="3 4"></i>
+						</div>
+					</div>
+					<div class="km-routine kw-card">
+						<span class="kw-kick">Routine</span>
+						<p><b>When</b> Desk candle opens</p>
+						<p><b>Then</b> turn on Desk lamp</p>
+						<span class="km-ran kw-fade" data-on="3 4"><Fragment set:html={tick} />Ran just now</span>
+						<i class="km-new kw-fade" data-on="1"></i>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</Walkthrough>
+
+<style is:global>
+	.km { width: 272px; height: 470px; display: flex; flex-direction: column; gap: 8px; color: var(--kw-fg); font: 11px/1.4 var(--sl-font); }
+
+	/* The computer: tag, knurd and the bridge in a row */
+	.km-chain { display: flex; align-items: center; padding: 10px 12px; border-radius: 14px; background: var(--kw-card); border: 1px solid var(--kw-line); }
+	.km-node { position: relative; display: grid; justify-items: center; gap: 3px; width: 46px; flex: none; }
+	.km-node b { font-size: 9.5px; font-weight: 600; }
+	.km-disc { width: 30px; height: 30px; border-radius: 50%; background: #e8edf3; box-shadow: inset 0 0 0 5px #c9d2dc; }
+	.km-box { width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; background: var(--kw-tint); color: var(--kw-accent); font: 700 13px var(--sl-font-mono); }
+	.km-wave { position: absolute; top: -4px; left: 4px; width: 38px; height: 38px; border-radius: 50%; border: 1.5px solid var(--kw-accent); }
+	.km-wave.on { animation: km-wave 1.3s ease-out 2 both; }
+	@keyframes km-wave { 0% { transform: scale(0.8); opacity: 0.9; } 100% { transform: scale(1.35); opacity: 0; } }
+	.km-wire { position: relative; flex: 1; height: 2px; margin-bottom: 16px; background: repeating-linear-gradient(to right, var(--kw-line-strong) 0 4px, transparent 4px 8px); }
+	.km-dot { position: absolute; top: -4px; width: 10px; height: 10px; border-radius: 50%; background: var(--kw-accent); box-shadow: 0 0 10px var(--kw-accent); opacity: 0; }
+	.km-wire .km-dot.on { animation: km-right 0.9s ease-in-out 0.6s both; }
+	.km-wire .km-late.on { animation-delay: 1.6s; }
+	@keyframes km-right { 0% { left: -6px; opacity: 0; } 20%, 80% { opacity: 1; } 100% { left: calc(100% - 4px); opacity: 0; } }
+
+	/* The bridge's log stays dark in both themes, like the site's code blocks. Views swap without
+	   fading so the text never blinks. */
+	.km-term { position: relative; height: 54px; border-radius: 10px; background: #070a0e; border: 1px solid #2c3846; }
+	.km-log { position: absolute; inset: 0; padding: 7px 10px; font: 9.5px/1.45 var(--sl-font-mono); color: #8b97a6; visibility: hidden; }
+	.km-log.on { visibility: visible; }
+	.km-log p { margin: 0; }
+	.km-ok { color: #4ade9b; }
+	.km-code { color: #e8edf3; }
+
+	.km-air { position: relative; display: flex; justify-content: center; height: 18px; color: var(--kw-muted); font-size: 9px; }
+	.km-air span { padding-left: 14px; }
+	.km-air::before { content: ''; position: absolute; left: 50%; top: 0; bottom: 0; width: 2px; margin-left: -96px; background: repeating-linear-gradient(to bottom, var(--kw-line-strong) 0 3px, transparent 3px 6px); }
+	.km-down { left: calc(50% - 100px); }
+	.km-down.on { animation: km-down 0.8s ease-in-out 0.3s both; }
+	@keyframes km-down { 0% { top: -6px; opacity: 0; } 20%, 80% { opacity: 1; } 100% { top: 14px; opacity: 0; } }
+
+	/* The phone, cut off at the bottom of the picture */
+	.km-phone { flex: 1; margin: 0 22px; padding: 8px 8px 0; border-radius: 30px 30px 0 0; background: #05070a; box-shadow: 0 0 0 1px #2c3846; overflow: hidden; }
+	.km-screen { position: relative; height: 100%; border-radius: 23px 23px 0 0; overflow: hidden; background: var(--kw-bg); }
+	.km-screen .kw-scr { padding: 16px 11px 12px; gap: 8px; }
+	.km-title { margin: 0; font-size: 13px; font-weight: 700; }
+
+	.km-view { position: relative; align-self: center; padding: 8px; border-radius: 10px; box-shadow: 0 0 0 2px var(--kw-accent); background: #1a1f26; overflow: hidden; }
+	.km-qr { width: 64px; height: 64px; padding: 4px; border-radius: 3px; background: #fff; }
+	.km-qr svg { display: block; width: 100%; height: 100%; }
+	.km-scanline { position: absolute; left: 6%; right: 6%; top: 10%; height: 2px; background: var(--kw-accent); box-shadow: 0 0 10px var(--kw-accent); }
+	.km-add.on .km-scanline { animation: km-scan 0.9s ease-in-out 2 alternate both; }
+	@keyframes km-scan { to { top: 88%; } }
+	.km-found { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 8px; }
+	.km-add.on .km-found { animation: km-up 0.35s 1.9s both; }
+	@keyframes km-up { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: none; } }
+	.km-pill { padding: 2px 6px; border-radius: 99px; background: var(--kw-ok-tint); color: var(--kw-ok); font-size: 8.5px; font-weight: 600; }
+	.km-warn { background: var(--kw-warn-tint); color: var(--kw-warn); }
+	.km-add .kw-btn { min-height: 30px; }
+	.km-touch { position: absolute; right: 24%; top: 50%; width: 22px; height: 22px; margin-top: -11px; border-radius: 50%; background: var(--kw-fg); opacity: 0; }
+	.km-add.on .km-touch { animation: km-tap 0.9s 3s both; }
+	@keyframes km-tap { 0% { opacity: 0; transform: scale(1.6); } 30% { opacity: 0.25; transform: scale(1); } 60% { opacity: 0.35; transform: scale(0.85); } 100% { opacity: 0; transform: scale(1.3); } }
+
+	.km-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+	.km-tile { position: relative; display: grid; gap: 1px; padding: 8px; border-radius: 12px; background: var(--kw-card); border: 1px solid var(--kw-line); }
+	.km-tile b { font-size: 10px; }
+	.km-ico svg { width: 18px; height: 18px; fill: none; stroke: var(--kw-muted); stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+	.km-state { grid-area: 3 / 1; color: var(--kw-muted); font-size: 9px; }
+	.km-open { color: var(--kw-warn); font-weight: 600; }
+	.km-on { color: var(--kw-accent); font-weight: 600; }
+	.km-ring { position: absolute; inset: -1px; border-radius: 12px; border: 1.5px solid var(--kw-warn); pointer-events: none; }
+	.km-glow { position: absolute; inset: -1px; border-radius: 12px; border: 1.5px solid var(--kw-accent); background: var(--kw-tint); box-shadow: 0 0 16px var(--kw-tint); pointer-events: none; }
+	.km-lamp:has(.km-glow.on) .km-ico svg { stroke: var(--kw-accent); }
+	.km-glow.on { transition-delay: 0.9s; }
+
+	.km-routine { position: relative; display: grid; gap: 2px; padding: 9px; }
+	.km-routine p { margin: 0; font-size: 10px; }
+	.km-routine b { color: var(--kw-muted); font-weight: 600; margin-right: 3px; }
+	.km-ran { display: flex; align-items: center; gap: 4px; margin-top: 3px; color: var(--kw-ok); font-size: 9px; font-weight: 600; }
+	.km-ran svg { width: 13px; height: 13px; }
+	.km-new { position: absolute; inset: -1px; border-radius: 12px; border: 1.5px solid var(--kw-accent); pointer-events: none; }
+	.km-home.on .km-routine:has(.km-new.on) { animation: km-up 0.4s 0.8s both; }
+
+	@media (prefers-reduced-motion: reduce) {
+		.km-found { opacity: 1; }
+	}
+</style>
