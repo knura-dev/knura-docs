@@ -1,0 +1,198 @@
+---
+title: Apple Home, Google Home and Alexa
+description: Show your tags as Matter contact sensors, so a tap starts a routine in Apple Home, Google Home, Alexa or SmartThings.
+---
+
+import { Steps } from '@astrojs/starlight/components';
+import MatterWalkthrough from '../../../components/MatterWalkthrough.astro';
+
+The **Matter bridge** puts your tags into the smart-home app you already use. Each tag shows up as a **contact sensor**, like a door sensor. A genuine tap "opens" it for a few seconds, and a routine in your app does the rest: "when Desk candle opens, turn on the desk lamp".
+
+```
+tag ──tap──▶ knurd checks it ──▶ knurgN ──signed, this computer only──▶ Matter bridge ──Matter──▶ your app's routine
+```
+
+The bridge is a small Node.js program that runs next to knurd. It works with Apple Home, Google Home, Amazon Alexa and SmartThings.
+
+<MatterWalkthrough />
+
+:::caution[Not for locks]
+Don't use taps for locks, garage doors or alarms yet. A tap proves the tag is genuine, not who tapped it.
+:::
+
+## Why a contact sensor
+
+Every big app can start a routine when a contact sensor opens, while support for Matter buttons still differs from app to app. The bridge only has its own sensors. It can't see or control any other device in your home, so someone who took it over could only "tap" your tags.
+
+## Before you start
+
+- **Your tags work.** Tapping a tag shows **Tap verified** on your phone. If not, start with [Your first verified tap](/start-here/first-verified-tap).
+- **Each tag you want in the app has a name** in `knurgn.properties`, such as `knot.04406B02936980.name=desk-candle`. [Webhooks](/actions/webhooks) shows how that file works.
+- **A smart-home hub that speaks Matter.** Most apps need one to add Matter devices and run routines: a HomePod or Apple TV for Apple Home, a Nest Hub, Nest Mini or Chromecast with Google TV for Google Home, a recent Echo for Alexa, or a SmartThings hub.
+- **Node.js 20.19 or newer** on knurd's computer. On Fedora: `sudo dnf install nodejs`.
+- **knurd's computer on the same home network as the hub, with IPv6 on.** Matter needs IPv6 on your home network. It's on by default on Fedora and most routers.
+
+:::note[An uncertified accessory]
+The bridge isn't Matter certified, so your app will call it an **uncertified accessory** and ask you to confirm. Google Home only adds uncertified devices after you register them in the [Google Home Developer Console](https://console.home.google.com/) with vendor ID `0xFFF1` and product ID `0x8000`.
+:::
+
+## 1. Get the bridge
+
+The bridge comes with Knura's source code. From the [latest release](https://github.com/knura-dev/knura/releases), download **Source code (tar.gz)**. Unpack it next to your settings folder, then install the bridge's parts:
+
+```sh
+cd ~/knura
+tar xzf ~/Downloads/knura-*.tar.gz
+cd knura-*/knurgn-matter
+npm install
+```
+
+## 2. Choose the tags to show
+
+<Steps>
+
+1. Copy the example settings:
+
+   ```sh
+   cp knurgn-matter.example.properties knurgn-matter.properties
+   ```
+
+2. In `knurgn-matter.properties`, list your tags by their names from `knurgn.properties`, and give each one the name it should have in your app:
+
+   ```properties
+   knots=desk-candle
+   knot.desk-candle.label=Desk candle
+   ```
+
+   For more tags, separate the names with commas: `knots=desk-candle,front-door`.
+
+</Steps>
+
+## 3. Share a secret with knurgN
+
+knurgN signs every tap it sends the bridge, and the bridge refuses taps without a good signature. Make one secret and save it in both places. Run this in the `knurgn-matter` folder, with the path to your settings folder:
+
+```sh
+SECRET="whsec_$(openssl rand -base64 32)"
+(umask 077; echo "$SECRET" > knurgn-matter-secret)
+(umask 077; echo "home=$SECRET" >> ~/knura/home/knurgn-secrets.properties)
+unset SECRET
+```
+
+`home` is your name for this connection; pick any. Don't share the secret in chats, screenshots or Git.
+
+## 4. Tell knurgN about the bridge
+
+In `knurgn.properties`, add the connection and put `home` in each tag's actions:
+
+```properties
+knot.04406B02936980.name=desk-candle
+knot.04406B02936980.actions=home
+matter.home.url=http://127.0.0.1:5541/tap
+secrets.file=knurgn-secrets.properties
+```
+
+Already have actions on that tag? Add `home` with a comma: `actions=test-hook,home`.
+
+## 5. Start it and pair
+
+<Steps>
+
+1. Let Matter through the firewall. On Fedora:
+
+   ```sh
+   sudo firewall-cmd --permanent --add-service=mdns --add-port=5540/udp && sudo firewall-cmd --reload
+   ```
+
+2. Start the bridge in the `knurgn-matter` folder:
+
+   ```sh
+   npm start
+   ```
+
+   It prints `showing 1 knot(s): desk-candle ("Desk candle")`, then a QR code and an 11-digit **Manual pairing code**.
+
+3. In your app, add a new **Matter** device and scan the QR code, or type the pairing code. Confirm the uncertified accessory. It shows up as **Knura taps** with one contact sensor per tag.
+
+4. Restart knurd. It should print `knurgN: 1 knot(s) with actions`.
+
+</Steps>
+
+The pairing code is random for each bridge. To add the bridge to a second app as well, turn on pairing mode for **Knura taps** in the first app and use the code that app gives you.
+
+## 6. Make a routine and tap
+
+In your app, make a routine or automation that starts **when Desk candle opens**, and pick what it does. Then tap the tag with your phone:
+
+- the phone shows **Tap verified**
+- knurd prints `action=home: delivered`
+- the bridge prints `tap 04406B02936980:61: pressed desk-candle`
+- the sensor opens for 3 seconds and your routine runs
+
+Taps closer together than 3 seconds count as one, so a burst of taps can't run a routine over and over.
+
+## Keep it running
+
+The bridge only passes taps on while it runs. On Linux, a systemd user service starts it with your computer. Change the folder name to the version you unpacked:
+
+```sh
+mkdir -p ~/.config/systemd/user
+cat > ~/.config/systemd/user/knurgn-matter.service <<'EOF'
+[Unit]
+Description=Knura Matter bridge
+
+[Service]
+WorkingDirectory=%h/knura/knura-0.3.0-alpha/knurgn-matter
+ExecStart=/usr/bin/node src/main.js
+Restart=on-failure
+
+[Install]
+WantedBy=default.target
+EOF
+systemctl --user daemon-reload
+systemctl --user enable --now knurgn-matter
+loginctl enable-linger "$USER"
+```
+
+## Using a hosted account?
+
+The **home link** runs knurgN at home, so the bridge runs next to the home link instead of knurd. Write steps 3 and 4 into the home link's own `knurgn.properties` and secrets file. Give the tag a knot rule with its name, because the bridge picks the sensor by that name: a tag whose action you only chose on the dashboard has none.
+
+## Settings
+
+All in `knurgn-matter.properties`:
+
+| Setting | Default | What it does |
+| --- | --- | --- |
+| `knots` | (needed) | Tag names from `knurgn.properties`, separated by commas. |
+| `knot.<name>.label` | the tag's name | The name in your app, up to 32 characters. |
+| `pulse.seconds` | `3` | How long a sensor stays open after a tap, 1 to 60. |
+| `listen.port` | `5541` | Where knurgN sends taps, on this computer only. |
+| `matter.port` | `5540` | The Matter port your hub talks to (UDP). |
+| `storage.dir` | `knurgn-matter-storage` | The pairing code and the keys from the apps you paired with. |
+| `secret.file` | `knurgn-matter-secret` | The secret from step 3. |
+
+**Back up the storage folder** with your [settings folder](/home/keys-backup). Deleting it unpairs the bridge from every app.
+
+## If something goes wrong
+
+| What you see | What to do |
+| --- | --- |
+| bridge: `knurgn-matter-secret can be read or changed by other users` | Run `chmod 600 knurgn-matter-secret`. |
+| bridge: `knurgn-matter-secret is missing` | Run step 3 in the `knurgn-matter` folder. |
+| bridge: `knots is missing` | Add `knots=` to `knurgn-matter.properties`, as in step 2. |
+| bridge: `refused (401 ...)` | The secret differs in the two files. Make a new one with step 3, replacing the old `home=` line. |
+| bridge: `refused (422 knot ... is not in this bridge's knots setting)` | Add that tag's name to `knots`, then restart the bridge. |
+| knurd: `matter.home.url must be on this computer` | The bridge only listens on this computer. Use `http://127.0.0.1:5541/tap`. |
+| knurd: `expired` | The bridge isn't running, or `listen.port` doesn't match the port in `matter.home.url`. |
+| The app can't find the bridge | Is the firewall open (step 5) and IPv6 on? Is the computer on the same network as the hub? `KNURGN_MATTER_DEBUG=1 npm start` shows the full Matter log. |
+| The sensor opens, but nothing happens | Check the routine starts on **opens**, not closes, and that your hub is online. |
+
+## How it stays safe
+
+- **Only genuine, first-time taps reach the bridge.** knurd refuses copied or reused links before knurgN sees them.
+- **Taps come only from this computer.** The bridge listens on `127.0.0.1`, and knurgN refuses a `matter.` address anywhere else.
+- **Every tap is signed.** The bridge refuses bad signatures, times more than 5 minutes off and tags it doesn't show, and skips a tap it has already handled.
+- **The secret stays private.** It sits alone in a file only you can read, the bridge won't start otherwise, and it's never logged.
+- **The bridge controls nothing.** It only has its own sensors and can't see or change your other devices.
+- **Its pairing code is random**, not Matter's well-known test code, and its storage folder is readable by you only.
