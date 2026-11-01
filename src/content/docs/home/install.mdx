@@ -1,0 +1,111 @@
+---
+title: Install Knura at home
+description: Install Knura on Windows, Mac, Ubuntu, Debian, Fedora or a Raspberry Pi, with Java included, then finish on the setup page.
+---
+
+import { Steps, Tabs, TabItem } from '@astrojs/starlight/components';
+
+The installers include everything Knura needs, Java too. After installing, open the setup page and follow its seven steps. They take you from a new master key to a tag that turns on a light.
+
+:::note[Coming with the next release]
+Installers are attached to releases from the next version on. Until they're on the [Releases page](https://github.com/knura-dev/knura/releases), use [Your first verified tap](/start-here/first-verified-tap) instead.
+:::
+
+## Pick your file
+
+Download it from the [latest release](https://github.com/knura-dev/knura/releases).
+
+| Computer | File |
+| --- | --- |
+| Windows 10 or 11 | `Knura-<version>.msi` |
+| Mac with Apple silicon (M1 or newer) | `Knura-<version>.pkg` |
+| Ubuntu, Debian, Linux Mint | `knura_<version>_amd64.deb` |
+| Raspberry Pi 4 or 5 with Raspberry Pi OS 64-bit | `knura_<version>_arm64.deb` |
+| Fedora | `knura-<version>-1.x86_64.rpm` |
+
+Pick a computer that stays on. Taps only work while Knura runs.
+
+## Install
+
+<Tabs syncKey="os">
+	<TabItem label="Windows">
+		<Steps>
+
+		1. Open the `.msi`. If Windows says **Windows protected your PC**, choose **More info**, then **Run anyway**. The installer isn't signed yet.
+		2. Open **Knura** from the Start menu. It starts Knura and opens the setup page in your browser.
+
+		</Steps>
+
+		Knura starts by itself each time you sign in to Windows; you'll find it under **Settings > Apps > Startup**. Open **Knura** from the Start menu whenever you want the setup page. Your settings are in `%LOCALAPPDATA%\KnuraData`.
+	</TabItem>
+	<TabItem label="Mac">
+		<Steps>
+
+		1. Open the `.pkg`. If macOS won't open it, go to **System Settings > Privacy & Security** and choose **Open Anyway**. The installer isn't signed yet.
+		2. Open **Knura** from Applications. It starts Knura and opens the setup page in your browser.
+
+		</Steps>
+
+		Knura starts by itself each time you sign in, and restarts if it stops. Open **Knura** whenever you want the setup page. Your settings are in `~/Library/Application Support/Knura`.
+	</TabItem>
+	<TabItem label="Ubuntu or Debian">
+		```sh
+		sudo apt install ./knura_<version>_amd64.deb
+		```
+
+		Knura now runs as a service and starts at every boot. Open [http://127.0.0.1:8425/setup](http://127.0.0.1:8425/setup) on this computer.
+	</TabItem>
+	<TabItem label="Raspberry Pi">
+		<Steps>
+
+		1. Copy the `arm64` file to the Pi and install it:
+
+		   ```sh
+		   sudo apt install ./knura_<version>_arm64.deb
+		   ```
+
+		2. No screen on the Pi? Get its one-time **setup code**:
+
+		   ```sh
+		   sudo cat /var/lib/knura/knurd-setup-code
+		   ```
+
+		3. On a laptop or phone on the same network, open `https://<the Pi's address>:8426/setup`. Your browser warns about the certificate, because Knura makes its own. Continue anyway.
+		4. Enter the setup code with your new password. The code works once.
+
+		</Steps>
+
+		Find the Pi's address in your router's list of devices, or with `hostname -I` on the Pi.
+	</TabItem>
+	<TabItem label="Fedora">
+		```sh
+		sudo dnf install ./knura-<version>-1.x86_64.rpm
+		```
+
+		Knura now runs as a service and starts at every boot. Open [http://127.0.0.1:8425/setup](http://127.0.0.1:8425/setup) on this computer. To let phones on your Wi-Fi pair later, open port 8426:
+
+		```sh
+		sudo firewall-cmd --add-port=8426/tcp --permanent && sudo firewall-cmd --reload
+		```
+	</TabItem>
+</Tabs>
+
+Then follow [the setup page](/home/setup-page).
+
+## On Linux and the Pi
+
+- Knura runs as the `knura` service: `systemctl status knura`. Its log is in `journalctl -u knura` and `/var/lib/knura/logs/`.
+- Your settings, master key included, are in `/var/lib/knura`, which only the `knura` user can read.
+- `knurctl` is installed too. Run it as that user, in that folder:
+
+  ```sh
+  cd /var/lib/knura && sudo -u knura knurctl backup
+  ```
+
+## Uninstall
+
+Your settings folder stays when you uninstall, because it holds the master key every tag depends on. Delete it yourself only once you have a [backup](/home/keys-backup) or no tags use it.
+
+- **Windows:** first run `Knura.exe --no-start-at-sign-in` in the folder Knura was installed to (usually `%LOCALAPPDATA%\Knura`), then uninstall it in **Settings > Apps**.
+- **Mac:** first run `/Applications/Knura.app/Contents/MacOS/Knura --no-start-at-sign-in`, then drag Knura from Applications to the Bin.
+- **Linux:** `sudo apt remove knura` or `sudo dnf remove knura` stops the service and removes it.
