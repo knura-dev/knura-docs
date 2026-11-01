@@ -6,7 +6,7 @@ description: Every knurd setting, what knurctl init writes, and complete example
 `knurd.properties` holds knurd's settings and your **master key**, which unlocks every tag set up with it. knurctl reads the same file, so keep it in your settings folder and run both from there.
 
 :::danger[Keep it secret, keep a backup]
-Anyone with `master.key` can make copies of your taps. Without it, you can't verify or reset your tags. Keep the file private (`chmod 600`) and keep a copy somewhere safe, like a password manager. See [Back up and move your keys](/home/keys-backup).
+Anyone with `master.key` can make copies of your taps. Without it, you can't verify or reset your tags. Keep the file private (`chmod 600`) and back it up with `knurctl backup create` and `knurctl backup sheet`. See [Back up and move your keys](/home/keys-backup).
 :::
 
 ## What knurctl init writes

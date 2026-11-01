@@ -14,6 +14,7 @@ These live in your settings folder, like `~/knura/home`. Run knurctl and knurd f
 | File | Made by | Private | What it's for |
 | --- | --- | --- | --- |
 | [knurd.properties](/reference/knurd-properties) | `knurctl init`, then you | Yes | knurd's address, your master key, the tap resolver, the admin API |
+| `knura-backup.properties` | `knurctl backup` | No | When this master key was last backed up: a short key ID and dates, no secrets |
 | `knurd-counters.properties` | knurd | No | The last tap counter per tag, so a copied link can't be used twice. Don't edit it. |
 | [knurgn.properties](/reference/knurgn-properties) | You | No | What a tap does: connectors and tag rules |
 | [knurgn-secrets.properties](/reference/knurgn-properties#settings-in-knurgn-secretsproperties) | You | Yes | One secret per connector |
