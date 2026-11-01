@@ -1,0 +1,36 @@
+---
+title: The setup page
+description: Set Knura up in your browser in seven steps, from a recovery kit to a tag that runs an action.
+---
+
+The setup page runs inside Knura, at [http://127.0.0.1:8425/setup](http://127.0.0.1:8425/setup) on the Knura computer. Nothing is sent to us. It remembers where you got to, so you can close it and come back.
+
+## The seven steps
+
+1. **Welcome.** Name your Knura and set a password for the page. The password stops anyone else on your Wi-Fi from changing your settings. You set it on the Knura computer itself, or with the setup code on a [Raspberry Pi](/home/install).
+2. **Recovery kit.** Save an encrypted backup file and print a recovery sheet. This is required before your first tag, because every tag depends on your master key. See [Back up and move your keys](/home/keys-backup).
+3. **Reach from phones.** A tag holds a link, and whoever taps it needs to reach your Knura over the internet. The page sets up Tailscale Funnel for you, for free and with nothing to change on your router. Or type your own https address.
+4. **Phone or reader.** Choose how you'll set tags up. With an Android phone, pair it right here (see below). With a USB reader, you use `knurctl provision`.
+5. **First tag.** Set a blank tag up, then tap it with any phone. The page shows **Tap verified** as soon as the tap arrives, then you name the tag and pick an icon.
+6. **First action.** Connect Home Assistant, Matter or a web service, then **Send a test**. For Home Assistant, the page writes the automation for you. It shows a notification, or turns a light on or off.
+7. **All set.** A summary, with links to add another tag.
+
+## Pair your phone from the page
+
+On step 4, choose **My Android phone**:
+
+1. Install the Knura app on the phone ([get the app](/tags/set-up-with-phone#2-install-the-app)) and connect it to the same Wi-Fi as the Knura computer.
+2. Type a name for the phone and press **Show pairing code**. The first time, Knura makes a security certificate and starts answering phones on your Wi-Fi, on port 8426. That takes a few seconds.
+3. In the app, tap **Scan pairing code** and scan the QR code on the page.
+
+The page notices when the phone has paired. You don't need a terminal or a restart, and it all stays on after a restart. The code works once, for 15 minutes, and holds no password, so a photo of it is useless afterwards.
+
+If the app can't connect, open **The app says it can't connect?** under the code:
+
+- Check the phone is on the same Wi-Fi, not mobile data.
+- If this computer's firewall blocks port 8426, the page shows the command that opens it.
+- If this computer has more than one network address, try another one there.
+
+## Forgot the password?
+
+On the Knura computer, delete `knurd-admin-password` from the settings folder. Then open the setup page there to make a new one. On a Pi without a screen, restart Knura after deleting it (`sudo systemctl restart knura`), and use the new setup code in `/var/lib/knura/knurd-setup-code`.

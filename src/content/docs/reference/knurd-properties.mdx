@@ -118,6 +118,7 @@ A second port for knurctl and the Knura app to manage knurd. It's off unless `ad
 | `admin.listen.port` | `8425` | Must differ from `listen.port`. |
 | `admin.tls.keystore` | none | The TLS certificate, written by `knurctl admin tls create`. |
 | `admin.tls.password.file` | none | Its password file. Set both TLS settings or neither. |
+| `admin.lan.port` | none | A second admin listener for phones on your Wi-Fi: every network, TLS only, while `admin.listen.host` stays `127.0.0.1` over plain HTTP. Needs the TLS settings. Pairing a phone on the setup page sets it to `8426`, with the TLS files. |
 | `admin.audit.file` | `knurd-admin-audit.log` | Every request, allowed or refused, as one JSON line. Tokens and keys are never written. |
 | `admin.provision.tokens` | none | Token names, separated by commas, that may set tags up with a phone's NFC. Needs `token` mode, `master.key` and `public.url`. Name only your own phones. |
 
