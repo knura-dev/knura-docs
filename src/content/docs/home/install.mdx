@@ -1,6 +1,6 @@
 ---
 title: Install Knura at home
-description: Install Knura on Windows, Mac, Ubuntu, Debian, Fedora or a Raspberry Pi, with Java included, then finish on the setup page.
+description: Install Knura on Windows, Ubuntu, Debian, Fedora or a Raspberry Pi (Mac coming later), with Java included, then finish on the setup page.
 ---
 
 import { Steps, Tabs, TabItem } from '@astrojs/starlight/components';
@@ -18,7 +18,7 @@ Download it from the [latest release](https://github.com/knura-dev/knura/release
 | Computer | File |
 | --- | --- |
 | Windows 10 or 11 | `Knura-<version>.msi` |
-| Mac with Apple silicon (M1 or newer) | `Knura-<version>.pkg` |
+| Mac with Apple silicon (M1 or newer) | Coming later. For now, follow [Your first verified tap](/start-here/first-verified-tap). |
 | Ubuntu, Debian, Linux Mint | `knura_<version>_amd64.deb` |
 | Raspberry Pi 4 or 5 with Raspberry Pi OS 64-bit | `knura_<version>_arm64.deb` |
 | Fedora | `knura-<version>-1.x86_64.rpm` |
@@ -39,6 +39,8 @@ Pick a computer that stays on. Taps only work while Knura runs.
 		Knura starts by itself each time you sign in to Windows; you'll find it under **Settings > Apps > Startup**. Open **Knura** from the Start menu whenever you want the setup page. Your settings are in `%LOCALAPPDATA%\KnuraData`.
 	</TabItem>
 	<TabItem label="Mac">
+		The Mac installer is coming later; releases don't include it yet. Until then, follow [Your first verified tap](/start-here/first-verified-tap). Once it's out:
+
 		<Steps>
 
 		1. Open the `.pkg`. If macOS won't open it, go to **System Settings > Privacy & Security** and choose **Open Anyway**. The installer isn't signed yet.
