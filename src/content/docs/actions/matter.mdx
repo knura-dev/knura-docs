@@ -12,7 +12,7 @@ The **Matter bridge** puts your tags into the smart-home app you already use. Ea
 tag ──tap──▶ knurd checks it ──▶ knurgN ──signed, this computer only──▶ Matter bridge ──Matter──▶ your app's routine
 ```
 
-The bridge is a small Node.js program that runs next to knurd. It works with Apple Home, Google Home, Amazon Alexa and SmartThings.
+The bridge is a small Node.js program that runs next to knurd, or next to the [home link](#with-a-home-link) if you have a hosted account. It works with Apple Home, Google Home, Amazon Alexa and SmartThings.
 
 <MatterWalkthrough />
 
@@ -27,7 +27,7 @@ Every big app can start a routine when a contact sensor opens, while support for
 ## Before you start
 
 - **Your tags work.** Tapping a tag shows **Tap verified** on your phone. If not, start with [Your first verified tap](/start-here/first-verified-tap).
-- **Each tag you want in the app has a name** in `knurgn.properties`, such as `knot.04406B02936980.name=desk-candle`. [Webhooks](/actions/webhooks) shows how that file works.
+- **Each tag you want in the app has a name** in `knurgn.properties`, such as `knot.04406B02936980.name=desk-candle`. [Webhooks](/actions/webhooks) shows how that file works. A tag without a name goes by its UID instead.
 - **A smart-home hub that speaks Matter.** Most apps need one to add Matter devices and run routines: a HomePod or Apple TV for Apple Home, a Nest Hub, Nest Mini or Chromecast with Google TV for Google Home, a recent Echo for Alexa, or a SmartThings hub.
 - **Node.js 20.19 or newer** on knurd's computer. On Fedora: `sudo dnf install nodejs`.
 - **knurd's computer on the same home network as the hub, with IPv6 on.** Matter needs IPv6 on your home network. It's on by default on Fedora and most routers.
@@ -154,9 +154,55 @@ systemctl --user enable --now knurgn-matter
 loginctl enable-linger "$USER"
 ```
 
-## Using a hosted account?
+## With a home link
 
-The **home link** runs knurgN at home, so the bridge runs next to the home link instead of knurd. Write steps 3 and 4 into the home link's own `knurgn.properties` and secrets file. Give the tag a knot rule with its name, because the bridge picks the sensor by that name: a tag whose action you only chose on the dashboard has none.
+With a hosted account, the **home link** runs knurgN at home, so the bridge runs next to it on the same computer, and you switch it on for each tag on the dashboard. You need a home link that shows **Connected** on the dashboard (its files are in [link.properties](/reference/link-properties)), and the same hub, Node.js and IPv6 as above.
+
+The steps are the same as above, with these differences. The examples use the home link folder `~/knura/home-link`, the connection name `matter-home` and a tag with UID `04356B02936980`.
+
+<Steps>
+
+1. **Get the bridge** as in [step 1](#1-get-the-bridge), on the home link's computer.
+
+2. **Choose the tags by UID.** A tag whose actions you choose on the dashboard has no knot rule, so it goes by its UID. Find the UID on the tag's page on the dashboard, under its name. In `knurgn-matter.properties`:
+
+   ```properties
+   knots=04356B02936980
+   knot.04356B02936980.label=Front door
+   ```
+
+   If the tag does have a rule with a name in the home link's `knurgn.properties`, use the name instead.
+
+3. **Share the secret with the home link's secrets file:**
+
+   ```sh
+   SECRET="whsec_$(openssl rand -base64 32)"
+   (umask 077; echo "$SECRET" > knurgn-matter-secret)
+   (umask 077; echo "matter-home=$SECRET" >> ~/knura/home-link/knurgn-secrets.properties)
+   unset SECRET
+   ```
+
+4. **Add the bridge to the home link's `knurgn.properties`**, next to your other connections. No tag rules are needed:
+
+   ```properties
+   matter.matter-home.url=http://127.0.0.1:5541/tap
+   ```
+
+5. **Start the bridge and pair it** as in [step 5](#5-start-it-and-pair), but restart the home link instead of knurd:
+
+   ```sh
+   systemctl --user restart knura-link
+   ```
+
+   It should print `the dashboard can choose living-room, matter-home` (with your own connections), and on **Connections** the home link says it offers `matter-home`.
+
+6. **Switch it on for the tag.** On the dashboard, open the tag, and under **When it's tapped**, **At home**, switch on **matter-home**. Do this for each tag in `knots`. It can run next to the tag's other actions, like Home Assistant.
+
+7. **Make a routine and tap**, as in [step 6](#6-make-a-routine-and-tap). knura-link prints `action=matter-home: delivered after 1 attempt(s) (HTTP 204)`, and the bridge prints `tap 04356B02936980:13: pressed 04356B02936980`.
+
+</Steps>
+
+[Keep it running](#keep-it-running) works the same way. Back up the bridge's `knurgn-matter-storage` folder with your home link folder.
 
 ## Settings
 
