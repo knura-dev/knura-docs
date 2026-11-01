@@ -36,7 +36,16 @@ export default defineConfig({
 				{ label: 'Run it at home', items: ['home/keys-backup'] },
 				{
 					label: 'Reference',
-					items: ['reference/knurgn-properties', 'reference/link-properties', 'reference/home-assistant-automations'],
+					items: [
+						'reference/files',
+						'reference/knurd-properties',
+						'reference/knurgn-properties',
+						'reference/link-properties',
+						'reference/knurctl-files',
+						'reference/knurgn-matter-properties',
+						'reference/helm-values',
+						'reference/home-assistant-automations',
+					],
 				},
 			],
 		}),

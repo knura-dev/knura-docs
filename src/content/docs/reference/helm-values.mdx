@@ -1,0 +1,99 @@
+---
+title: Kubernetes values
+description: The settings file and Secret for running knurd, and the Matter bridge, on Kubernetes with the Knura Helm chart.
+---
+
+The Helm chart in the Knura source (`deploy/helm/knura`) runs knurd, with knurgN, in one pod, and the Matter bridge next to it if you want it. knurctl stays on your computer, because it needs the USB reader.
+
+You make two things: a **Secret** with your keys, and a **values file** with everything else. The chart never takes keys as values, so they can't end up in a values file, in Git or in Helm's history.
+
+:::note
+The images aren't published to a registry yet. Build them from the source (`deploy/README.md` has the commands), then load them into your cluster or push them to your own registry and set `image.*.repository`.
+:::
+
+## The keys Secret
+
+From the folder with your `knurd.properties`:
+
+```sh
+mkdir -m 700 k8s-keys
+(umask 077; sed -n 's/^master\.key=//p' knurd.properties > k8s-keys/master.key)
+kubectl create namespace knura
+kubectl --namespace knura create secret generic knura-keys \
+    --from-file=k8s-keys/master.key \
+    --from-file=knurgn-secrets.properties
+rm -r k8s-keys
+```
+
+| Key in the Secret | What | Needed |
+| --- | --- | --- |
+| `master.key` | The `master.key` value from `knurd.properties`, 32 hex digits | Always |
+| `knurgn-secrets.properties` | Your [knurgN secrets file](/reference/knurgn-properties#settings-in-knurgn-secretsproperties) | When tags have actions |
+| `knurgn-matter-secret` | The Matter bridge's `whsec_` secret alone | With `matter.enabled` |
+
+`resolver.key` stays on your computer: knurd never uses it, only `knurctl resolver register` does.
+
+## Example values file
+
+```yaml title="my-values.yaml"
+existingSecret: knura-keys
+publicUrl: https://knura.example.org
+logLevel: info
+
+# Copied from the resolver.* lines knurctl wrote in knurd.properties.
+resolver:
+  url: https://tap.knura.io
+  owner: k7mq2xw9pd
+  publicKey: COPY_RESOLVER_PUBLICKEY_FROM_KNURD_PROPERTIES
+
+knots:
+  - uid: "04356B02936980"   # quote it, or YAML may read an all-digit UID as a number
+    name: front-door
+    actions: [test-hook]
+  - uid: "04406B02936980"
+    name: desk-tag
+    actions: [home]
+
+webhooks:
+  test-hook: https://webhook.site/your-unique-id
+
+matter:
+  enabled: true
+  id: home
+  labels:
+    desk-tag: Desk
+
+ingress:
+  enabled: true
+  className: nginx
+  host: knura.example.org
+  tlsSecretName: knura-tls
+```
+
+```sh
+helm install knura deploy/helm/knura --namespace knura -f my-values.yaml
+```
+
+Download: [my-values.yaml](/examples/my-values.yaml)
+
+## Values
+
+| Value | Default | What it does |
+| --- | --- | --- |
+| `existingSecret` | `knura-keys` | The Secret with your keys. |
+| `publicUrl` | empty | knurd's `public.url`: the HTTPS address phones use. Empty means knurd still checks taps, but phones can't reach it. |
+| `logLevel` | empty (`info`) | `error`, `warn`, `info`, `debug` or `trace`. |
+| `resolver.url`, `.owner`, `.publicKey` | tap.knura.io, empty, empty | Copied from the `resolver.` lines in `knurd.properties`. Leave `owner` empty if you don't use tap.knura.io. |
+| `knots` | `[]` | Tag rules: `uid`, `name` and `actions` for each tag. |
+| `webhooks` | `{}` | Webhook connectors, `id: url`. `https://` only, except private network addresses. |
+| `matter.enabled` | `false` | Run the Matter bridge in the same pod. |
+| `matter.id` | `home` | The bridge's connector id: list it in a tag's `actions`. |
+| `matter.labels` | `{}` | Sensor names in your app, by knot name, up to 32 characters. |
+| `matter.pulseSeconds`, `.matterPort` | `3`, `5540` | As in [knurgn-matter.properties](/reference/knurgn-matter-properties). |
+| `matter.hostNetwork` | `true` | Puts the pod on the node's network so hubs can find the bridge. This also puts the tap port there. |
+| `persistence.size`, `.storageClass`, `.existingClaim` | `64Mi` | Where tap counters and the bridge's pairing keys are kept. Keep this volume: a knurd that loses its counters accepts old tap links again. The chart never deletes it. |
+| `service.type`, `.port` | `ClusterIP`, `8424` | knurd's tap port inside the cluster. |
+| `ingress.enabled`, `.className`, `.host`, `.tlsSecretName`, `.annotations` | off | HTTPS for phones through your ingress controller. Every path on the tap port is meant to be public. |
+| `resources`, `nodeSelector`, `tolerations` | | The usual Kubernetes settings. Pin the pod to a node on your home network when using Matter. |
+
+The chart doesn't set up Home Assistant connectors or the admin API yet. For admin commands, use `kubectl port-forward`.

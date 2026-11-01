@@ -1,0 +1,48 @@
+---
+title: All Knura files
+description: Every settings and secrets file Knura uses, who makes it, and whether it's secret.
+---
+
+Knura keeps its settings in plain text files, one setting per line (`name=value`). Lines starting with `#` are comments. This page lists every file, so you can see which ones you write, which ones a command writes for you, and which ones must stay private.
+
+**Private** files hold keys, tokens or secrets. Knura refuses to read them if other users on the computer can (make them with `umask 077` or `chmod 600` them). Never share them in chats, screenshots or Git.
+
+## At home (self-hosted)
+
+These live in your settings folder, like `~/knura/home`. Run knurctl and knurd from that folder: both read `knurd.properties` from the folder you're in.
+
+| File | Made by | Private | What it's for |
+| --- | --- | --- | --- |
+| [knurd.properties](/reference/knurd-properties) | `knurctl init`, then you | Yes | knurd's address, your master key, the tap resolver, the admin API |
+| `knurd-counters.properties` | knurd | No | The last tap counter per tag, so a copied link can't be used twice. Don't edit it. |
+| [knurgn.properties](/reference/knurgn-properties) | You | No | What a tap does: connectors and tag rules |
+| [knurgn-secrets.properties](/reference/knurgn-properties#settings-in-knurgn-secretsproperties) | You | Yes | One secret per connector |
+| [knurd-admin-tokens.properties](/reference/knurctl-files#knurd-admin-tokensproperties) | `knurctl admin token add` | Yes | Hashes of the admin API's login tokens |
+| [knurctl-creds.properties](/reference/knurctl-files#knurctl-credsproperties) | `knurctl admin token add` | Yes | How knurctl logs in to the admin API |
+| `knurd-admin-audit.log` | knurd | No | Every admin API request, one JSON line each |
+| `knurd-admin.p12`, `knurd-admin.p12.password` | `knurctl admin tls create` | Yes | The admin API's TLS certificate, for use from other computers |
+| [A tag keys file](/reference/knurctl-files#a-tag-keys-file) | You | Yes | A tag's current keys, for tags set up by other software |
+| [knurgn-matter.properties](/reference/knurgn-matter-properties) | You | No | The Matter bridge: which tags show up as sensors |
+| `knurgn-matter-secret` | You | Yes | The Matter bridge's signing secret |
+| `knurgn-matter-storage/` | The Matter bridge | Yes | Its pairing code and the keys from paired apps. Back it up. |
+| [my-values.yaml](/reference/helm-values) | You | No | Settings for running Knura on Kubernetes |
+
+## With a hosted account
+
+A hosted account keeps your tag keys for you, so the only files are for the home link, on the computer that runs it, like `~/knura/home-link`.
+
+| File | Made by | Private | What it's for |
+| --- | --- | --- | --- |
+| [link.properties](/reference/link-properties) | `knura-link pair`, then you | No | Where the home link connects, and its options |
+| `link-secrets.properties` | `knura-link pair` | Yes | The home link's login token |
+| [knurgn.properties](/reference/knurgn-properties) | You | No | Your connectors, like Home Assistant |
+| [knurgn-secrets.properties](/reference/knurgn-properties#settings-in-knurgn-secretsproperties) | You | Yes | One secret per connector |
+
+## Logs
+
+knurd and the home link both take `log.level` and `log.file` in their settings file. The log never holds keys, tokens, claim codes or the secret part of a tap link.
+
+| Setting | What it does |
+| --- | --- |
+| `log.level` | `error`, `warn`, `info` (the default), `debug` (each action attempt, with timings) or `trace`. The `KNURA_LOG_LEVEL` environment variable overrides it for one run. |
+| `log.file` | Also write the log to this file, relative to the settings file's folder. At 10 MB it moves to `<name>.1` and a new one starts; four old files are kept. |

@@ -1,0 +1,33 @@
+# Example from https://docs.knura.io/reference/helm-values
+existingSecret: knura-keys
+publicUrl: https://knura.example.org
+logLevel: info
+
+# Copied from the resolver.* lines knurctl wrote in knurd.properties.
+resolver:
+  url: https://tap.knura.io
+  owner: k7mq2xw9pd
+  publicKey: COPY_RESOLVER_PUBLICKEY_FROM_KNURD_PROPERTIES
+
+knots:
+  - uid: "04356B02936980"   # quote it, or YAML may read an all-digit UID as a number
+    name: front-door
+    actions: [test-hook]
+  - uid: "04406B02936980"
+    name: desk-tag
+    actions: [home]
+
+webhooks:
+  test-hook: https://webhook.site/your-unique-id
+
+matter:
+  enabled: true
+  id: home
+  labels:
+    desk-tag: Desk
+
+ingress:
+  enabled: true
+  className: nginx
+  host: knura.example.org
+  tlsSecretName: knura-tls
