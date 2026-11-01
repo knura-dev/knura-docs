@@ -155,7 +155,7 @@ The automation can use everything about the tap in `trigger.json.data`:
 
 ## Using a hosted account?
 
-The hosted account checks the taps, and the **home link**, a small program on a computer at home, runs the rules. It uses a `knurgn.properties` and secrets file written exactly as in step 4, in its own folder, so steps 1 to 3 and 6 are the same. Instead of the `actions.file` line, you pair the home link from the dashboard. You can also choose `living-room` for a tag on the dashboard instead of writing its knot rule.
+The hosted account checks the taps, and the **home link**, a small program on a computer at home, runs the rules. [Set up a home link](/hosted/home-link) walks through it with Home Assistant, step by step, with an animation. It uses a `knurgn.properties` and secrets file written exactly as in step 4, in its own folder, so steps 1 to 3 and 6 are the same. Instead of the `actions.file` line, you pair the home link from the dashboard. You can also choose `living-room` for a tag on the dashboard instead of writing its knot rule.
 
 A tag chosen on the dashboard has no knot name, so match it in Home Assistant by `trigger.json.data.uid`, or show `trigger.json.data.name` in a notification.
 

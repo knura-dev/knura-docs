@@ -1,0 +1,43 @@
+---
+// The animated home link walkthrough. The player lives in public/guides/home-link.html (it draws the
+// real dashboard and tap page with example data); ?embed shows only the player, sized to fit here.
+---
+
+<div class="khl">
+	<iframe src="/guides/home-link.html?embed" title="Animated walkthrough: set up a home link" loading="lazy"></iframe>
+	<p class="khl-alt">Prefer a full page? <a href="/guides/home-link.html" target="_blank" rel="noopener">Open the walkthrough on its own</a>.</p>
+</div>
+
+<style>
+	.khl iframe {
+		display: block;
+		width: 100%;
+		height: 640px;
+		border: 0;
+		background: transparent;
+	}
+	.khl-alt {
+		font-size: var(--sl-text-sm);
+		color: var(--sl-color-gray-3);
+	}
+</style>
+
+<script>
+	// Same origin: match the docs theme, and grow the frame to the player's height.
+	for (const frame of document.querySelectorAll<HTMLIFrameElement>('.khl iframe')) {
+		const sync = () => {
+			const doc = frame.contentDocument;
+			if (!doc?.documentElement) return;
+			const theme = document.documentElement.dataset.theme;
+			if (theme === 'light' || theme === 'dark') doc.documentElement.dataset.theme = theme;
+			const wrap = doc.querySelector('.wrap');
+			if (wrap) frame.style.height = Math.ceil(wrap.getBoundingClientRect().height) + 'px';
+		};
+		frame.addEventListener('load', () => {
+			sync();
+			const wrap = frame.contentDocument?.querySelector('.wrap');
+			if (wrap) new ResizeObserver(sync).observe(wrap);
+		});
+		new MutationObserver(sync).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+	}
+</script>

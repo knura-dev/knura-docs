@@ -1,0 +1,154 @@
+---
+title: Set up a home link
+description: Run Home Assistant, Matter and webhook actions at home from a hosted account, with no ports to open.
+---
+
+import { Steps } from '@astrojs/starlight/components';
+import HomeLinkGuide from '../../../components/HomeLinkGuide.astro';
+
+A **home link** lets taps checked by your hosted account run things at home, like a Home Assistant automation. It's a small program, `knura-link`, on a computer at home. It dials out to your account, so you don't open any ports. This takes about 15 minutes.
+
+```
+tag ──▶ phone ──▶ app.knura.io checks the tap ──▶ knura-link at home ──▶ Home Assistant
+```
+
+<HomeLinkGuide />
+
+## Before you start
+
+- **A Home or Pro plan.** Home links come with paid plans: 3 on Home, 5 on Pro.
+- **A computer that stays on**, on your home network, with Java 21 (`java -version`): a Fedora box, a Raspberry Pi 4 or 5, a NAS.
+- **A tag on your account.** Tapping it shows **Tap verified** on your phone.
+- **A Home Assistant automation with a webhook trigger.** [Home Assistant](/actions/home-assistant) shows how to make one.
+
+The examples use a computer called `fedora`, a Home Assistant connection called `living-room` and a tag called Front door.
+
+## 1. Install knura-link
+
+Download `knura-link-0.5.0-alpha.zip` from the [Knura releases page](https://github.com/knura-dev/knura/releases), then:
+
+```sh
+cd ~/knura
+unzip -q ~/Downloads/knura-link-0.5.0-alpha.zip
+echo 'export PATH="$HOME/knura/knura-link-0.5.0-alpha/bin:$PATH"' >> ~/.bashrc
+source ~/.bashrc
+```
+
+## 2. Get a pairing code
+
+Sign in at [app.knura.io](https://app.knura.io/app#connections) and open **Connections**. Under **Home links**, type a **Name** for the computer (letters, digits, `-` or `_`, like `fedora`) and press **Get a pairing code**. Press **Copy**, and leave the code on screen until step 3 is done.
+
+:::caution
+The code is shown only once and holds the home link's login. Don't share it or paste it anywhere else.
+:::
+
+## 3. Pair the computer
+
+```sh
+mkdir -p ~/knura/home-link && cd ~/knura/home-link
+knura-link pair
+```
+
+Paste the code when asked and press Enter. Nothing shows while you paste. It answers `Paired with link.app.knura.io` and writes `link.properties` and `link-secrets.properties`, readable by you only. Then press **Done** on the dashboard.
+
+## 4. Tell it about Home Assistant
+
+In the same folder, create `knurgn.properties`. `living-room` is your name for this connection, the one you'll pick on the dashboard. Use Home Assistant's IP address and the port you use in your browser:
+
+```properties title="knurgn.properties"
+homeassistant.living-room.url=http://192.168.1.112:8123
+secrets.file=knurgn-secrets.properties
+```
+
+No webhook id yet? Make a random one, and paste the same id into your automation's `webhook_id`. It must be at least 32 characters:
+
+```sh
+openssl rand -hex 24
+```
+
+Then save the webhook id, after the connection name and `=`:
+
+```sh
+(umask 077; echo 'living-room=PASTE_YOUR_WEBHOOK_ID_HERE' >> knurgn-secrets.properties)
+```
+
+No tag rules are needed: you choose what each tag does on the dashboard. A tag with no rule sends its UID as `knot`, so in Home Assistant match on `trigger.json.data.uid`, or show `trigger.json.data.name`. More settings: [link.properties](/reference/link-properties) and [knurgn.properties](/reference/knurgn-properties).
+
+## 5. Start it
+
+```sh
+knura-link
+```
+
+It prints `the dashboard can choose living-room` and `connected to link.app.knura.io; waiting for taps`. On the dashboard, the home link shows **Connected** and **It offers living-room**.
+
+The `plain http` warning means anyone who can watch your home network's traffic could read the webhook id. Use Home Assistant's https address if it has one. On a home network you trust, it's fine to carry on.
+
+## 6. Choose what a tag does
+
+Open **Tags**, pick the tag, and under **When it's tapped** switch on **living-room** in the **At home** list. Changes save straight away. Only connectors your home link offers are listed, and the home link checks every choice, so the dashboard can never run something you didn't offer.
+
+To offer only some connectors, or none, add `dashboard.connectors=living-room` (or `none`) to `link.properties` and restart knura-link.
+
+## 7. Tap the tag
+
+Your phone shows **Tap verified**, and knura-link logs the tap and Home Assistant's answer:
+
+```
+INFO  knura-link: tap 04356B02936980:13 from the hosted account: 1 action(s) chosen on the dashboard started
+INFO  knurgn: tap 04356B02936980:13 knot=04356B02936980 action=living-room: delivered after 1 attempt(s) (HTTP 200)
+```
+
+A tap that arrives twice runs once, and a tap that arrives more than 30 seconds late runs nothing.
+
+## 8. Keep it running
+
+Stop the copy you started by hand (Ctrl+C), then save this as `~/.config/systemd/user/knura-link.service`:
+
+```ini title="knura-link.service"
+[Unit]
+Description=Knura home link
+After=network-online.target
+
+[Service]
+WorkingDirectory=%h/knura/home-link
+ExecStart=%h/knura/knura-link-0.5.0-alpha/bin/knura-link
+Restart=on-failure
+RestartSec=30
+
+[Install]
+WantedBy=default.target
+```
+
+<Steps>
+
+1. Start it, and keep it running when you log out:
+
+   ```sh
+   systemctl --user daemon-reload
+   systemctl --user enable --now knura-link
+   loginctl enable-linger "$USER"
+   ```
+
+2. Watch its log:
+
+   ```sh
+   journalctl --user -u knura-link -f
+   ```
+
+</Steps>
+
+## If something goes wrong
+
+| What you see | What to do |
+| --- | --- |
+| The dashboard shows the home link as **Offline** | Check `journalctl --user -u knura-link`. Is the computer on and online? |
+| `the hosted account refused this home link (HTTP 403)` | It was removed on the dashboard, or the plan changed. Add it again, delete `link.properties` and `link-secrets.properties`, and run `knura-link pair`. |
+| knura-link won't start: the webhook id is too short | Home Assistant webhook ids must be 32 to 128 characters. Make one with `openssl rand -hex 24`. |
+| `delivered`, but nothing happens in Home Assistant | Home Assistant answers 200 even for an unknown webhook id. Check the id in the automation matches the one in `knurgn-secrets.properties`. |
+| **living-room** isn't listed on the tag page | knura-link isn't connected, or `dashboard.connectors` leaves it out. |
+
+## Next
+
+- Show tags in Apple Home, Google Home or Alexa: [the Matter bridge with a home link](/actions/matter#with-a-home-link).
+- Every file the home link uses: [All Knura files](/reference/files#with-a-hosted-account).
