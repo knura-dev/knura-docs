@@ -20,7 +20,7 @@ If the address shows the setup page or nothing at all, update knurd from the [la
 | **Phones and readers** | Pair a phone with a QR code, remove one, and the `knurctl` commands for a USB reader. |
 | **Keys and backup** | Whether your master key is backed up. Download a backup file or the recovery sheet, and see how to restore. |
 | **Logs** | What knurd has been doing, with a filter and a copy that's safe to paste in a bug report. |
-| **Settings** | Rename this Knura, change the page password, the public address and the log detail. Also lists the access tokens, the settings folder and the light or dark look. |
+| **Settings** | Rename this Knura, change the page password, the public address and the log detail, and open the page from other devices. Also lists the access tokens, the settings folder and the light or dark look. |
 
 On a phone-sized window, **Keys and backup** and **Logs** are under **Settings**.
 
@@ -82,6 +82,14 @@ To move a settings folder that's already inside: stop knurd, move the folder, th
 **Logs** shows the end of knurd's log file. Filter by **Warnings** or **Errors**, search, or switch on **Follow** to see new lines as they come. **Copy for a bug report** hides tag UIDs, addresses and anything that looks like a secret. Keys, tokens and passwords are never written to the log in the first place.
 
 The page needs `log.file` in `knurd.properties`, which new setups have (`log.file=logs/knurd.log`). **Settings → Log detail** changes how much is written, straight away and with no restart. See [Logs](/reference/files#logs).
+
+## Open it from your phone
+
+At first only the Knura computer can open the dashboard. To use it from a phone or another computer on the same Wi-Fi, switch on **Settings → Open this page from other devices**. Settings then shows the address to open, like `https://192.168.1.40:8426`, and a QR code for the phone's camera. Sign in with the same password.
+
+The first time, the browser warns that the connection isn't private. That's because your Knura made its own certificate instead of buying one. Before you continue, open the certificate details from the warning and compare its **SHA-256 fingerprint** with the one in Settings. If they match, it's your Knura. If they don't, stop.
+
+It only works on your home network, not from away. Switching it off stops browsers on other devices; paired phones and the Knura app keep working. If the page won't load, the computer's firewall may be blocking it, and Settings shows the command that lets it through.
 
 ## Signing in
 
