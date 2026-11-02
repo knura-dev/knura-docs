@@ -23,6 +23,8 @@ It shows your **master key ID** (a short name for the key that gives nothing awa
 If `knurctl backup` says `unknown command`, update knurctl and knurd from the [latest release](https://github.com/knura-dev/knura/releases).
 :::
 
+On the [dashboard](/home/dashboard), **Keys and backup** shows the same, and makes both kinds of backup with a button.
+
 ## Two ways to back up
 
 Do both if you can. They protect against different things.
@@ -46,12 +48,16 @@ knurctl backup create
 
 Choose a passphrase of at least 10 characters (a few random words work well) and keep it in your password manager. Without it nobody can open the backup, you included.
 
-It writes `knura-backup-<date>.knurabackup` next to your settings folder, for example `~/knura/knura-backup-2026-11-01.knurabackup`. Logs are left out. Copy the file somewhere safe, then delete the local copy.
+It writes `knura-backup-<date>.knurabackup` next to your settings folder, for example `~/knura-backup-2026-11-01.knurabackup` for a settings folder in `~/knura-home`. Add `--out FILE` to put it somewhere else. Logs are left out. Copy the file somewhere safe, then delete the local copy.
+
+:::caution[Not inside the code folder]
+If you downloaded Knura with `git clone`, keep the settings folder and backups outside that folder. Deleting it to download Knura again deletes everything inside, master key included. `knurctl backup create`, knurd's start-up log and the dashboard warn you when something is inside one.
+:::
 
 Check a copy at any time. This proves the passphrase works and that the copy holds the master key you use now:
 
 ```sh
-knurctl backup verify ~/knura/knura-backup-2026-11-01.knurabackup
+knurctl backup verify ~/knura-backup-2026-11-01.knurabackup
 ```
 
 ### Print a recovery sheet
