@@ -122,4 +122,13 @@ A second port for knurctl and the Knura app to manage knurd. It's off unless `ad
 | `admin.audit.file` | `knurd-admin-audit.log` | Every request, allowed or refused, as one JSON line. Tokens and keys are never written. |
 | `admin.provision.tokens` | none | Token names, separated by commas, that may set tags up with a phone's NFC. Needs `token` mode, `master.key` and `public.url`. Name only your own phones. |
 
+### Metrics
+
+A `/metrics` page for Prometheus, on a port of its own. Off unless `metrics.port` is set. See [Metrics for Prometheus](/home/metrics).
+
+| Setting | Default | What it does |
+| --- | --- | --- |
+| `metrics.port` | none | Turns the page on, for example `9425`. Must differ from `listen.port`, `admin.listen.port` and `admin.lan.port`. |
+| `metrics.listen.host` | `127.0.0.1` | An IP address on this computer or your home network (or `0.0.0.0` in a container). Never a public one. |
+
 Paths are relative to the folder `knurd.properties` is in.
