@@ -34,7 +34,7 @@ export default defineConfig({
 				{ label: 'Tags', items: ['tags/claim-a-tag', 'tags/set-up-with-phone'] },
 				{ label: 'Actions', items: ['actions/webhooks', 'actions/home-assistant', 'actions/matter', 'actions/check-a-webhook-signature'] },
 				{ label: 'Hosted account', items: ['hosted/home-link'] },
-				{ label: 'Run it at home', items: ['home/install', 'home/setup-page', 'home/keys-backup'] },
+				{ label: 'Run it at home', items: ['home/install', 'home/setup-page', 'home/dashboard', 'home/keys-backup'] },
 				{
 					label: 'Reference',
 					items: [

@@ -1,0 +1,90 @@
+---
+title: The dashboard
+description: Your Knura's everyday page in the browser. See whether everything works, name your tags, read the tap history, and manage actions, phones, backups and logs.
+---
+
+Once setup is done, your Knura has a dashboard at [http://127.0.0.1:8425/](http://127.0.0.1:8425/) on the Knura computer. You sign in with the same password as the [setup page](/home/setup-page). It's part of knurd, loads nothing from the internet, and everything it does can also be done with `knurctl`.
+
+:::note[New in Knura after 0.6.1]
+If the address shows the setup page or nothing at all, update knurd from the [latest release](https://github.com/knura-dev/knura/releases), or pull and rebuild if you run it from the code.
+:::
+
+## The pages
+
+| Page | What it's for |
+| --- | --- |
+| **Home** | Whether everything works, a chart of genuine taps, and your last tap. Each health check that needs a look has a button that takes you to the fix. |
+| **Tags** | Every tag with its week of taps. A tag's page renames it, changes its icon, switches its actions on and off, and sends a test. |
+| **Taps** | The full history, filtered by result (genuine or stopped), tag and time. Download it as CSV or JSON. |
+| **Actions** | Home Assistant, Matter bridges and webhooks. Add, edit or remove them, and send a test to just one. |
+| **Phones and readers** | Pair a phone with a QR code, remove one, and the `knurctl` commands for a USB reader. |
+| **Keys and backup** | Whether your master key is backed up. Download a backup file or the recovery sheet, and see how to restore. |
+| **Logs** | What knurd has been doing, with a filter and a copy that's safe to paste in a bug report. |
+| **Settings** | Rename this Knura, change the page password, the public address and the log detail. Also lists the access tokens, the settings folder and the light or dark look. |
+
+On a phone-sized window, **Keys and backup** and **Logs** are under **Settings**.
+
+## Health checks
+
+**Home** checks these and says what to do when one needs a look:
+
+- **Phones can reach this computer.** Your public address answers from the internet. If it doesn't, check that Tailscale is running, or set an address up.
+- **Actions are ready, and answering.** An action that didn't get its last tap or test shows as **Not answering**, with the reason.
+- **Your master key is backed up.** There's a backup file and it's less than 90 days old.
+- **Your settings aren't inside the code folder.** See [Keep settings out of the code folder](#keep-settings-out-of-the-code-folder).
+- **A phone is paired.**
+
+## Actions
+
+**Actions** lists each action with its address, the tags that use it, and how its last tap or test went:
+
+- **Working**: it got the last one.
+- **Not answering**: it didn't, with the reason, like *no answer in time* or *the connection was refused*.
+- **Not used yet**: nothing has been sent to it since Knura started.
+
+**Send a test** sends a pretend tap (tap number 0) to that one action only, so you can check Home Assistant or a webhook without tapping a tag. To make a tag run an action, switch it on from the tag's page.
+
+**Add an action** asks for a name and an address. The secret is shown **once**:
+
+- For **Home Assistant**, it's a ready-made automation with a secret webhook id. Paste it in Home Assistant under **Settings → Automations & scenes → Create automation**, then **⋮ → Edit in YAML**. See [Home Assistant](/actions/home-assistant).
+- For a **webhook** or the **Matter bridge**, it's the signing secret. See [Webhooks](/actions/webhooks) and [Matter](/actions/matter).
+
+Lost it? **Edit** makes a new one. The old one stops working at once.
+
+An action that a tag still uses can't be removed. Switch it off on those tags first.
+
+## Phones
+
+Type a name for the phone and press **Show pairing code**, then scan the code with the Knura app. It works the same as [pairing from the setup page](/home/setup-page#pair-your-phone-from-the-page). The page notices when the phone has paired.
+
+Removing a phone cuts it off at once: it can't reach this Knura or set tags up any more. Tags it set up keep working.
+
+## Keys and backup
+
+**Make a backup file** suggests a six-word passphrase. Save it in your password manager, tick the box, and download the file. **Download the sheet to print** gives you the recovery sheet. Both are the same as `knurctl backup create` and `knurctl backup sheet`. See [Back up and move your keys](/home/keys-backup).
+
+Restoring replaces the folder knurd runs from, so it's done with `knurctl` while knurd is stopped. The page shows the commands.
+
+### Keep settings out of the code folder
+
+If you run Knura from the code (`git clone`), keep your settings folder and your backups **outside** the cloned folder, for example in `~/knura-home`:
+
+```sh
+knurd --home ~/knura-home
+```
+
+Deleting the cloned folder to download Knura again would delete everything inside it, master key included. The dashboard, knurd's start-up log and `knurctl backup create` warn you when something is inside one.
+
+To move a settings folder that's already inside: stop knurd, move the folder, then start knurd with `--home` and the new place.
+
+## Logs
+
+**Logs** shows the end of knurd's log file. Filter by **Warnings** or **Errors**, search, or switch on **Follow** to see new lines as they come. **Copy for a bug report** hides tag UIDs, addresses and anything that looks like a secret. Keys, tokens and passwords are never written to the log in the first place.
+
+The page needs `log.file` in `knurd.properties`, which new setups have (`log.file=logs/knurd.log`). **Settings → Log detail** changes how much is written, straight away and with no restart. See [Logs](/reference/files#logs).
+
+## Signing in
+
+The dashboard uses the setup page's password. After five wrong passwords in a few minutes, Knura makes that computer wait five minutes before trying again. Restarting knurd clears the wait.
+
+Forgot the password? On the Knura computer, delete `knurd-admin-password` from the settings folder, restart knurd, and open [http://127.0.0.1:8425/](http://127.0.0.1:8425/) there to make a new one. Your tags, keys and actions stay as they are.

@@ -9,12 +9,15 @@ Knura keeps its settings in plain text files, one setting per line (`name=value`
 
 ## At home (self-hosted)
 
-These live in your settings folder, like `~/knura/home`. Run knurctl and knurd from that folder: both read `knurd.properties` from the folder you're in.
+These live in your settings folder, like `~/knura-home`. Keep it outside any folder you downloaded with `git clone`, so deleting that folder can't take your keys with it. Run knurctl and knurd from that folder: both read `knurd.properties` from the folder you're in.
 
 | File | Made by | Private | What it's for |
 | --- | --- | --- | --- |
 | [knurd.properties](/reference/knurd-properties) | `knurctl init`, then you | Yes | knurd's address, your master key, the tap resolver, the admin API |
 | `knura-backup.properties` | `knurctl backup` | No | When this master key was last backed up: a short key ID and dates, no secrets |
+| `knurd-admin-password` | The setup page | Yes | A hash of the setup page and dashboard password. Delete it to make a new password. |
+| `knurd-tags.properties` | The dashboard and the Knura app | No | Each tag's name, icon, and when the name last changed |
+| `knurd-taps.log` | knurd | No | The dashboard's tap history: a year of results, one line per tap, never the tap link |
 | `knurd-counters.properties` | knurd | No | The last tap counter per tag, so a copied link can't be used twice. Don't edit it. |
 | [knurgn.properties](/reference/knurgn-properties) | You | No | What a tap does: connectors and tag rules |
 | [knurgn-secrets.properties](/reference/knurgn-properties#settings-in-knurgn-secretsproperties) | You | Yes | One secret per connector |
