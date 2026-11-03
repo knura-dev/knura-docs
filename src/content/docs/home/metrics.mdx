@@ -60,6 +60,25 @@ scrape_configs:
       - targets: ["192.168.1.20:9425"]
 ```
 
+## See it in Grafana
+
+There's a ready-made Grafana dashboard showing taps, forged or copied links, tap check time, actions and Java health. You don't need it: knurd's own [dashboard](/home/dashboard) works without any of this. It's for people who already use Grafana or want longer history and alerts.
+
+- **Already have Grafana:** go to **Dashboards → New → Import**, upload [knurd.json](https://github.com/knura-dev/knura/blob/main/deploy/grafana/provisioning/dashboards/knurd.json), and pick your Prometheus data source.
+- **Starting from nothing:** [deploy/grafana](https://github.com/knura-dev/knura/tree/main/deploy/grafana) runs Prometheus and Grafana with podman or Docker, with the dashboard already loaded:
+
+  ```sh
+  podman run -d --name prometheus --network host \
+    -v ./prometheus.yml:/etc/prometheus/prometheus.yml:Z \
+    -v prometheus-data:/prometheus docker.io/prom/prometheus
+
+  podman run -d --name grafana --network host \
+    -v ./provisioning:/etc/grafana/provisioning:Z \
+    -v grafana-data:/var/lib/grafana docker.io/grafana/grafana
+  ```
+
+  Run these from that folder, then open http://localhost:3000 and sign in as admin / admin. The dashboard is under **Dashboards → Knura**. On the first start Grafana downloads updates, so the page can take a minute to load.
+
 ## What it shows
 
 ### Taps and actions
